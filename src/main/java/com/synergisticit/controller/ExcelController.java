@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.synergisticit.dto.ColumnProfile;
+import com.synergisticit.entity.SourceProfile;
 import com.synergisticit.service.ExcelService;
+import com.synergisticit.service.SourceProfileService;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -19,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class ExcelController {
 
     private final ExcelService excelService;
+    private final SourceProfileService sourceProfileService;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<String> uploadExcel(@RequestParam MultipartFile file) throws IOException {
@@ -36,5 +40,11 @@ public class ExcelController {
     public List<ColumnProfile> profileSheet(@RequestParam MultipartFile file, @RequestParam("sheet") String sheetName) throws IOException {
 
         return excelService.profileSheet(file, sheetName);
+    }
+    
+    @PostMapping(value = "/profile/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SourceProfile saveProfile(@RequestParam MultipartFile file, @RequestParam("sheet") String sheetName) throws IOException {
+
+        return sourceProfileService.createProfile(file, sheetName);
     }
 }
