@@ -1,5 +1,6 @@
 package com.synergisticit.service;
 
+import com.synergisticit.dto.AiMappingResponse;
 import com.synergisticit.dto.MappingSuggestion;
 import com.synergisticit.entity.SourceColumn;
 import com.synergisticit.entity.TargetField;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,13 +22,29 @@ public class MappingSuggestionService {
 
     private final SourceColumnRepository sourceColumnRepository;
     private final TargetFieldRepository targetFieldRepository;
+    private final OpenAiMappingService openAiMappingService;
     private static final Set<String> GENERIC_TOKENS = Set.of("name", "date", "number", "id", "code", "value", "type", "field");
 
-    public List<MappingSuggestion> suggestMappings(Long sourceProfileId, Long templateVersionId) {
+    public List<MappingSuggestion> suggestMappings(
+            Long sourceProfileId,
+            Long templateVersionId) {
 
-        List<SourceColumn> sourceColumns = sourceColumnRepository.findBySourceProfileId(sourceProfileId);
-        List<TargetField> targetFields = targetFieldRepository.findByTemplateVersionIdOrderBySequence(templateVersionId);
+        List<SourceColumn> sourceColumns =
+                sourceColumnRepository.findBySourceProfileId(sourceProfileId);
+
+        List<TargetField> targetFields =
+                targetFieldRepository.findByTemplateVersionIdOrderBySequence(
+                        templateVersionId
+                );
+
         List<MappingSuggestion> suggestions = new ArrayList<>();
+
+        Set<Long> matchedSourceIds = new HashSet<>();
+        Set<Long> matchedTargetIds = new HashSet<>();
+
+        // --------------------------------------------------
+        // STEP 1: Deterministic matching
+        // --------------------------------------------------
 
         for (SourceColumn sourceColumn : sourceColumns) {
 
@@ -35,7 +53,13 @@ public class MappingSuggestionService {
 
             for (TargetField targetField : targetFields) {
 
-                int confidence = calculateConfidence(sourceColumn, targetField);
+                // Don't reuse a target field
+                if (matchedTargetIds.contains(targetField.getId())) {
+                    continue;
+                }
+
+                int confidence =
+                        calculateConfidence(sourceColumn, targetField);
 
                 if (confidence > bestConfidence) {
                     bestConfidence = confidence;
@@ -43,7 +67,7 @@ public class MappingSuggestionService {
                 }
             }
 
-            if (bestTarget != null && bestConfidence > 0) {
+            if (bestTarget != null && bestConfidence >= 70) {
 
                 suggestions.add(
                         new MappingSuggestion(
@@ -57,6 +81,102 @@ public class MappingSuggestionService {
                                 bestConfidence
                         )
                 );
+
+                matchedSourceIds.add(sourceColumn.getId());
+                matchedTargetIds.add(bestTarget.getId());
+            }
+        }
+
+        // --------------------------------------------------
+        // STEP 2: Find unresolved source columns
+        // --------------------------------------------------
+
+        List<SourceColumn> unresolvedSourceColumns =
+                sourceColumns.stream()
+                        .filter(sourceColumn ->
+                                !matchedSourceIds.contains(
+                                        sourceColumn.getId()
+                                ))
+                        .toList();
+
+        // --------------------------------------------------
+        // STEP 3: Find unused target fields
+        // --------------------------------------------------
+
+        List<TargetField> availableTargetFields =
+                targetFields.stream()
+                        .filter(targetField ->
+                                !matchedTargetIds.contains(
+                                        targetField.getId()
+                                ))
+                        .toList();
+
+        // --------------------------------------------------
+        // STEP 4: Ask AI to map only unresolved fields
+        // --------------------------------------------------
+
+        if (!unresolvedSourceColumns.isEmpty()
+                && !availableTargetFields.isEmpty()) {
+
+            AiMappingResponse aiResponse =
+                    openAiMappingService.suggestMappings(
+                            unresolvedSourceColumns,
+                            availableTargetFields
+                    );
+
+            // --------------------------------------------------
+            // STEP 5: Convert AI results to MappingSuggestion
+            // --------------------------------------------------
+
+            for (AiMappingResponse.AiMapping aiMapping :
+                    aiResponse.getMappings()) {
+
+                if (aiMapping.getConfidence() < 70) {
+                    continue;
+                }
+
+                SourceColumn sourceColumn =
+                        unresolvedSourceColumns.stream()
+                                .filter(column ->
+                                        column.getId().equals(
+                                                aiMapping.getSourceColumnId()
+                                        ))
+                                .findFirst()
+                                .orElse(null);
+
+                TargetField targetField =
+                        availableTargetFields.stream()
+                                .filter(field ->
+                                        field.getId().equals(
+                                                aiMapping.getTargetFieldId()
+                                        ))
+                                .findFirst()
+                                .orElse(null);
+
+                if (sourceColumn == null || targetField == null) {
+                    continue;
+                }
+
+                if (matchedSourceIds.contains(sourceColumn.getId())
+                        || matchedTargetIds.contains(targetField.getId())) {
+                    continue;
+                }
+
+                suggestions.add(
+                        new MappingSuggestion(
+                                sourceColumn.getId(),
+                                sourceColumn.getColumnName(),
+                                sourceColumn.getDataType(),
+                                targetField.getId(),
+                                targetField.getName(),
+                                targetField.getKey(),
+                                targetField.getDataType(),
+                                aiMapping.getConfidence()
+                        )
+                );
+
+                matchedSourceIds.add(sourceColumn.getId());
+                matchedTargetIds.add(targetField.getId());
             }
         }
 
