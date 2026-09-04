@@ -39,4 +39,15 @@ public class Mapping {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransformationType transformation;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mapping_method", nullable = false)
+    private MappingMethod mappingMethod;
+
+    @Column(name = "ai_confidence")
+    private Integer aiConfidence;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ai_recommended_target_field_id")
+    private TargetField aiRecommendedTargetField;
 }

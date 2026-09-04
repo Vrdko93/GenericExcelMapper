@@ -1,0 +1,177 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 40px;
+    background: rgb(83, 107, 172);
+    font-family: Arial, sans-serif;
+    color: #222;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+    margin-top: 0;
+}
+
+.controls {
+    display: flex;
+    gap: 20px;
+    align-items: end;
+    margin-bottom: 25px;
+}
+
+.controls div {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input {
+    padding: 9px;
+    width: 180px;
+}
+
+button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#loadSuggestions {
+    background: #222;
+    color: white;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #f1f1f1;
+}
+
+.accept-button {
+    background: #198754;
+    color: white;
+}
+
+.accept-button:disabled {
+    background: #999;
+    cursor: default;
+}
+
+.confidence {
+    padding: 5px 9px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.high-confidence {
+    background: #d1e7dd;
+}
+
+.medium-confidence {
+    background: #fff3cd;
+}
+
+.low-confidence {
+    background: #f8d7da;
+}
+
+.accepted {
+    background: #eefaf2;
+}
+
+#message {
+    min-height: 24px;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+#message.success {
+    color: #198754;
+}
+
+#message.error {
+    color: #dc3545;
+}
+
+#message.info {
+    color: #555;
+}
+
+
+.panel {
+    margin-bottom: 35px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #ddd;
+}
+
+.panel h2 {
+    margin-bottom: 18px;
+}
+
+.upload-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#excelFile {
+    width: auto;
+}
+
+#uploadExcel {
+    background: #0d6efd;
+    color: white;
+}
+
+#uploadExcel:hover {
+    background: #0b5ed7;
+}
+
+#uploadMessage {
+    min-height: 24px;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+#uploadMessage.success {
+    color: #198754;
+}
+
+#uploadMessage.error {
+    color: #dc3545;
+}
+
+#uploadMessage.info {
+    color: #555;
+}
+
+#profileTable {
+    margin-top: 15px;
+}

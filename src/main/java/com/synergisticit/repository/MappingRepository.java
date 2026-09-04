@@ -5,4 +5,7 @@ import com.synergisticit.entity.Mapping;
 
 public interface MappingRepository extends JpaRepository<Mapping, Long> {
 
+    boolean existsBySourceColumnId(Long sourceColumnId);
+
+    boolean existsByTargetFieldId(Long targetFieldId);
 }

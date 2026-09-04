@@ -1,5 +1,6 @@
 package com.synergisticit.dto;
 
+import com.synergisticit.entity.MappingMethod;
 import com.synergisticit.entity.TransformationType;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,4 +12,7 @@ public class MappingRequest {
     private Long sourceColumnId;
     private Long targetFieldId;
     private TransformationType transformation;
+    private MappingMethod mappingMethod;
+    private Integer aiConfidence;
+    private Long aiRecommendedTargetFieldId;
 }

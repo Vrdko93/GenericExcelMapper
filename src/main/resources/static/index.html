@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Generic Excel Mapper</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Generic Excel Mapper</h1>
+
+	<section class="panel">
+
+	    <h2>1. Upload Excel</h2>
+
+	    <div class="upload-row">
+
+	        <input
+	                type="file"
+	                id="excelFile"
+	                accept=".xlsx,.xls">
+
+
+
+	    </div>
+		<br><button id="uploadExcel">
+		    Upload Excel
+		</button>
+	    <div id="uploadMessage"></div>
+
+	</section>
+
+    <section class="panel">
+
+        <h2>2. Source Profiling Results</h2>
+
+        <table id="profileTable">
+
+            <thead>
+            <tr>
+                <th>Column</th>
+                <th>Data Type</th>
+                <th>Sample Values</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            </tbody>
+
+        </table>
+
+    </section>
+
+
+    <section class="panel">
+
+        <h2>3. Mapping Suggestions</h2>
+
+        <div class="controls">
+
+            <div>
+                <label for="sourceProfileId">
+                    Source Profile ID
+                </label>
+
+                <input
+                        type="number"
+                        id="sourceProfileId"
+                        value="1">
+            </div>
+
+            <div>
+                <label for="templateVersionId">
+                    Template Version ID
+                </label>
+
+                <input
+                        type="number"
+                        id="templateVersionId"
+                        value="1">
+            </div>
+
+            <button id="loadSuggestions">
+                Load Mapping Suggestions
+            </button>
+
+        </div>
+
+        <div id="message"></div>
+
+        <table id="mappingTable">
+
+            <thead>
+            <tr>
+                <th>Source Column</th>
+                <th>Source Type</th>
+                <th>Target Field</th>
+                <th>Target Type</th>
+                <th>Confidence</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            </tbody>
+
+        </table>
+
+    </section>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
