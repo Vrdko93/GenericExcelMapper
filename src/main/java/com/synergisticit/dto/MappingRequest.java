@@ -15,4 +15,5 @@ public class MappingRequest {
     private MappingMethod mappingMethod;
     private Integer aiConfidence;
     private Long aiRecommendedTargetFieldId;
+    private String transformationConfig;
 }

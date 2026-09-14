@@ -28,8 +28,6 @@
 	                id="excelFile"
 	                accept=".xlsx,.xls">
 
-
-
 	    </div>
 		<br><button id="uploadExcel">
 		    Upload Excel
@@ -87,6 +85,18 @@
                         id="templateVersionId"
                         value="1">
             </div>
+			
+			<div>
+			    <label for="mappingProfileId">
+			        Mapping Profile
+			    </label>
+
+			    <select id="mappingProfileId">
+			        <option value="">
+			            No Profile
+			        </option>
+			    </select>
+			</div>
 
             <button id="loadSuggestions">
                 Load Mapping Suggestions
@@ -104,7 +114,9 @@
                 <th>Source Type</th>
                 <th>Target Field</th>
                 <th>Target Type</th>
+				<th>Type of Mapping</th>
                 <th>Confidence</th>
+				<th>Transformation</th>
                 <th>Action</th>
             </tr>
             </thead>
@@ -115,7 +127,21 @@
         </table>
 
     </section>
+	
+	<button id="previewMappedData">
+	    Preview Mapped Data
+	</button>
+	
+	<div id="previewSection" style="display:none;">
 
+	    <h3>Mapped Data Preview</h3>
+
+	    <table id="previewTable">
+	        <thead></thead>
+	        <tbody></tbody>
+	    </table>
+
+	</div>
 </div>
 
 <script src="app.js"></script>

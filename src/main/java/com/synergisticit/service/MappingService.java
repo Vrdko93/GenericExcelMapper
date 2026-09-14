@@ -66,6 +66,8 @@ public class MappingService {
         mapping.setMappingMethod(mappingMethod);
         mapping.setAiConfidence(request.getAiConfidence());
         mapping.setAiRecommendedTargetField(aiRecommendedTargetField);
+        mapping.setTransformation(transformation);
+        mapping.setTransformationConfig(request.getTransformationConfig());
 
         return mappingRepository.save(mapping);
     }

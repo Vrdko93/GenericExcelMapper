@@ -1,5 +1,6 @@
 package com.synergisticit.dto;
 
+import com.synergisticit.entity.MappingMethod;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,4 +20,5 @@ public class MappingSuggestion {
     private String targetDataType;
 
     private int confidence;
+    private MappingMethod mappingMethod;
 }

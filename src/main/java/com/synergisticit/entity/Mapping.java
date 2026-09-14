@@ -50,4 +50,7 @@ public class Mapping {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ai_recommended_target_field_id")
     private TargetField aiRecommendedTargetField;
+    
+    @Column(name = "transformation_config", length = 1000)
+    private String transformationConfig;
 }

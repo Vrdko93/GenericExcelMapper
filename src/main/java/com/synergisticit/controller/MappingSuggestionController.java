@@ -14,8 +14,15 @@ public class MappingSuggestionController {
     private final MappingSuggestionService mappingSuggestionService;
 
     @GetMapping
-    public List<MappingSuggestion> suggestMappings(@RequestParam Long sourceProfileId, @RequestParam Long templateVersionId) {
+    public List<MappingSuggestion> suggestMappings(
+            @RequestParam Long sourceProfileId,
+            @RequestParam Long templateVersionId,
+            @RequestParam(required = false) Long mappingProfileId) {
 
-        return mappingSuggestionService.suggestMappings(sourceProfileId, templateVersionId);
+        return mappingSuggestionService.suggestMappings(
+                sourceProfileId,
+                templateVersionId,
+                mappingProfileId
+        );
     }
 }

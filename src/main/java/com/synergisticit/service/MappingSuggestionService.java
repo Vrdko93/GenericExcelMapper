@@ -2,8 +2,13 @@ package com.synergisticit.service;
 
 import com.synergisticit.dto.AiMappingResponse;
 import com.synergisticit.dto.MappingSuggestion;
+import com.synergisticit.entity.MappingMethod;
+import com.synergisticit.entity.MappingProfile;
+import com.synergisticit.entity.MappingProfileEntry;
 import com.synergisticit.entity.SourceColumn;
 import com.synergisticit.entity.TargetField;
+import com.synergisticit.repository.MappingProfileEntryRepository;
+import com.synergisticit.repository.MappingProfileRepository;
 import com.synergisticit.repository.SourceColumnRepository;
 import com.synergisticit.repository.TargetFieldRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +29,14 @@ public class MappingSuggestionService {
     private final TargetFieldRepository targetFieldRepository;
     private final OpenAiMappingService openAiMappingService;
     private static final Set<String> GENERIC_TOKENS = Set.of("name", "date", "number", "id", "code", "value", "type", "field");
-
+    private final MappingProfileRepository mappingProfileRepository;
+    private final MappingProfileEntryRepository mappingProfileEntryRepository;
+    
+    
     public List<MappingSuggestion> suggestMappings(
             Long sourceProfileId,
-            Long templateVersionId) {
+            Long templateVersionId,
+            Long mappingProfileId) {
 
         List<SourceColumn> sourceColumns =
                 sourceColumnRepository.findBySourceProfileId(sourceProfileId);
@@ -41,12 +50,116 @@ public class MappingSuggestionService {
 
         Set<Long> matchedSourceIds = new HashSet<>();
         Set<Long> matchedTargetIds = new HashSet<>();
+        
+     // STEP 1 - Reusable Mapping Profile
+
+        if (mappingProfileId != null) {
+
+            MappingProfile mappingProfile =
+                    mappingProfileRepository
+                            .findById(mappingProfileId)
+                            .orElseThrow(() ->
+                                    new IllegalArgumentException(
+                                            "Mapping profile not found: "
+                                                    + mappingProfileId
+                                    )
+                            );
+
+            if (!mappingProfile.getActive()) {
+                throw new IllegalArgumentException(
+                        "Mapping profile is not active: "
+                                + mappingProfileId
+                );
+            }
+
+            if (!mappingProfile
+                    .getTemplateVersion()
+                    .getId()
+                    .equals(templateVersionId)) {
+
+                throw new IllegalArgumentException(
+                        "Mapping profile does not belong to template version: "
+                                + templateVersionId
+                );
+            }
+
+
+            List<MappingProfileEntry> profileEntries =
+                    mappingProfileEntryRepository
+                            .findByMappingProfileId(
+                                    mappingProfileId
+                            );
+
+
+            for (SourceColumn sourceColumn : sourceColumns) {
+
+                MappingProfileEntry matchingEntry =
+                        profileEntries.stream()
+                                .filter(entry ->
+                                        normalize(
+                                                entry.getSourceColumnName()
+                                        ).equals(
+                                                normalize(
+                                                        sourceColumn.getColumnName()
+                                                )
+                                        )
+                                )
+                                .findFirst()
+                                .orElse(null);
+
+
+                if (matchingEntry == null) {
+                    continue;
+                }
+
+
+                TargetField targetField =
+                        matchingEntry.getTargetField();
+
+
+                if (matchedTargetIds.contains(
+                        targetField.getId())) {
+                    continue;
+                }
+
+
+                suggestions.add(
+                        new MappingSuggestion(
+                                sourceColumn.getId(),
+                                sourceColumn.getColumnName(),
+                                sourceColumn.getDataType(),
+
+                                targetField.getId(),
+                                targetField.getName(),
+                                targetField.getKey(),
+                                targetField.getDataType(),
+
+                                100,
+                                MappingMethod.PROFILE
+                        )
+                );
+
+
+                matchedSourceIds.add(
+                        sourceColumn.getId()
+                );
+
+                matchedTargetIds.add(
+                        targetField.getId()
+                );
+            }
+        }
 
         // --------------------------------------------------
         // STEP 1: Deterministic matching
         // --------------------------------------------------
 
         for (SourceColumn sourceColumn : sourceColumns) {
+        	
+            if (matchedSourceIds.contains(
+                    sourceColumn.getId())) {
+                continue;
+            }
 
             TargetField bestTarget = null;
             int bestConfidence = 0;
@@ -69,18 +182,17 @@ public class MappingSuggestionService {
 
             if (bestTarget != null && bestConfidence >= 70) {
 
-                suggestions.add(
-                        new MappingSuggestion(
-                                sourceColumn.getId(),
-                                sourceColumn.getColumnName(),
-                                sourceColumn.getDataType(),
-                                bestTarget.getId(),
-                                bestTarget.getName(),
-                                bestTarget.getKey(),
-                                bestTarget.getDataType(),
-                                bestConfidence
-                        )
-                );
+            	suggestions.add(new MappingSuggestion(
+            	        sourceColumn.getId(),
+            	        sourceColumn.getColumnName(),
+            	        sourceColumn.getDataType(),
+            	        bestTarget.getId(),
+            	        bestTarget.getName(),
+            	        bestTarget.getKey(),
+            	        bestTarget.getDataType(),
+            	        bestConfidence,
+            	        MappingMethod.DETERMINISTIC
+            	));
 
                 matchedSourceIds.add(sourceColumn.getId());
                 matchedTargetIds.add(bestTarget.getId());
@@ -162,18 +274,17 @@ public class MappingSuggestionService {
                     continue;
                 }
 
-                suggestions.add(
-                        new MappingSuggestion(
-                                sourceColumn.getId(),
-                                sourceColumn.getColumnName(),
-                                sourceColumn.getDataType(),
-                                targetField.getId(),
-                                targetField.getName(),
-                                targetField.getKey(),
-                                targetField.getDataType(),
-                                aiMapping.getConfidence()
-                        )
-                );
+                suggestions.add(new MappingSuggestion(
+                        sourceColumn.getId(),
+                        sourceColumn.getColumnName(),
+                        sourceColumn.getDataType(),
+                        targetField.getId(),
+                        targetField.getName(),
+                        targetField.getKey(),
+                        targetField.getDataType(),
+                        aiMapping.getConfidence(),
+                        MappingMethod.AI
+                ));
 
                 matchedSourceIds.add(sourceColumn.getId());
                 matchedTargetIds.add(targetField.getId());

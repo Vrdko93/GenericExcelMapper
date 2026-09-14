@@ -1,5 +1,24 @@
 $(document).ready(function () {
 
+	const templateVersionId =
+	    $("#templateVersionId").val();
+
+	if (templateVersionId) {
+	    loadMappingProfiles(
+	        templateVersionId
+	    );
+	}
+	
+	$("#templateVersionId").change(function () {
+
+	    const templateVersionId =
+	        $(this).val();
+
+	    loadMappingProfiles(
+	        templateVersionId
+	    );
+	});
+	
 	$("#uploadExcel").click(function () {
 
 	    uploadExcel();
@@ -13,6 +32,9 @@ $(document).ready(function () {
 
         const templateVersionId =
             $("#templateVersionId").val();
+			
+		const mappingProfileId =
+			$("#mappingProfileId").val();
 
         if (!sourceProfileId || !templateVersionId) {
             showMessage(
@@ -24,24 +46,202 @@ $(document).ready(function () {
 
         loadSuggestions(
             sourceProfileId,
-            templateVersionId
+            templateVersionId,
+			mappingProfileId
         );
     });
 
+	$("#previewMappedData").click(function () {
+
+	    const file =
+	        $("#excelFile")[0].files[0];
+
+	    const sourceProfileId =
+	        $("#sourceProfileId").val();
+
+	    if (!file) {
+	        showMessage(
+	            "Please upload an Excel file first.",
+	            "error"
+	        );
+	        return;
+	    }
+
+	    if (!sourceProfileId) {
+	        showMessage(
+	            "Source profile is missing.",
+	            "error"
+	        );
+	        return;
+	    }
+
+	    const formData = new FormData();
+
+	    formData.append("file", file);
+	    formData.append("sheet", sheetName);
+	    formData.append(
+	        "sourceProfileId",
+	        sourceProfileId
+	    );
+
+	    $.ajax({
+
+	        url: "/api/mappings/preview",
+
+	        method: "POST",
+
+	        data: formData,
+
+	        processData: false,
+
+	        contentType: false,
+
+	        success: function (rows) {
+
+	            displayMappedPreview(rows);
+	        },
+
+	        error: function (xhr) {
+
+	            console.error(xhr);
+
+	            showMessage(
+	                "Could not generate preview.",
+	                "error"
+	            );
+	        }
+	    });
+	});
 });
 
+function loadMappingProfiles(
+    templateVersionId
+) {
+
+    $.ajax({
+
+        url: "/api/mapping-profiles",
+
+        method: "GET",
+
+        data: {
+            templateVersionId: templateVersionId
+        },
+
+        success: function (profiles) {
+
+            const select =
+                $("#mappingProfileId");
+
+            select.empty();
+
+            select.append(
+                $("<option>")
+                    .val("")
+                    .text("No Profile")
+            );
+
+            profiles.forEach(function (profile) {
+
+                select.append(
+                    $("<option>")
+                        .val(profile.id)
+                        .text(profile.name)
+                );
+            });
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+            showMessage(
+                "Failed to load mapping profiles.",
+                "error"
+            );
+        }
+    });
+}
+
+let availableTargetFields = [];
+let sheetName = null;
+
+function loadTargetFields(templateVersionId, callback) {
+
+    $.ajax({
+
+        url: "/api/target-fields",
+
+        method: "GET",
+
+        data: {
+            templateVersionId: templateVersionId
+        },
+
+        success: function (targetFields) {
+
+            availableTargetFields =
+                targetFields;
+
+            if (callback) {
+                callback();
+            }
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+            showMessage(
+                "Failed to load target fields.",
+                "error"
+            );
+        }
+    });
+}
 
 function loadSuggestions(
     sourceProfileId,
     templateVersionId
 ) {
 
-    $("#mappingTable tbody").empty();
-
+	const mappingProfileId =
+	    $("#mappingProfileId").val();
+	
     showMessage(
         "Loading mapping suggestions...",
         "info"
     );
+
+    loadTargetFields(
+        templateVersionId,
+        function () {
+            fetchMappingSuggestions(
+                sourceProfileId,
+                templateVersionId,
+				mappingProfileId
+            );
+        }
+    );
+}
+
+function fetchMappingSuggestions(
+    sourceProfileId,
+    templateVersionId,
+	mappingProfileId
+) {
+
+    $("#mappingTable tbody").empty();
+	
+	const requestData = {
+	    sourceProfileId: sourceProfileId,
+	    templateVersionId: templateVersionId
+	};
+
+	if (mappingProfileId) {
+	    requestData.mappingProfileId =
+	        mappingProfileId;
+	}
 
     $.ajax({
 
@@ -51,27 +251,16 @@ function loadSuggestions(
 
         data: {
             sourceProfileId: sourceProfileId,
-            templateVersionId: templateVersionId
+            templateVersionId: templateVersionId,
+			mappingProfileId: mappingProfileId
         },
 
         success: function (suggestions) {
 
             $("#mappingTable tbody").empty();
 
-            if (suggestions.length === 0) {
-
-                showMessage(
-                    "No mapping suggestions found.",
-                    "info"
-                );
-
-                return;
-            }
-
             suggestions.forEach(function (suggestion) {
-
                 addSuggestionRow(suggestion);
-
             });
 
             showMessage(
@@ -93,7 +282,6 @@ function loadSuggestions(
     });
 }
 
-
 function addSuggestionRow(suggestion) {
 
     const row = $("<tr>");
@@ -110,11 +298,27 @@ function addSuggestionRow(suggestion) {
         )
     );
 
-    row.append(
-        $("<td>").text(
-            suggestion.targetFieldName
-        )
-    );
+	const targetSelect =
+	    $("<select>")
+	        .addClass("target-select");
+
+	availableTargetFields.forEach(function (field) {
+
+	    const option =
+	        $("<option>")
+	            .val(field.id)
+	            .text(field.name);
+
+	    if (field.id === suggestion.targetFieldId) {
+	        option.prop("selected", true);
+	    }
+
+	    targetSelect.append(option);
+	});
+
+	row.append(
+	    $("<td>").append(targetSelect)
+	);
 
     row.append(
         $("<td>").text(
@@ -122,6 +326,28 @@ function addSuggestionRow(suggestion) {
         )
     );
 
+	const methodCell =
+	    $("<td>");
+
+	const methodBadge =
+	    $("<span>")
+	        .addClass("method-badge")
+	        .text(suggestion.mappingMethod);
+
+	if (suggestion.mappingMethod === "AI") {
+	    methodBadge.addClass("method-ai");
+	}
+	else if (suggestion.mappingMethod === "DETERMINISTIC") {
+	    methodBadge.addClass("method-deterministic");
+	}
+	else if (suggestion.mappingMethod === "MANUAL") {
+	    methodBadge.addClass("method-manual");
+	}
+
+	methodCell.append(methodBadge);
+
+	row.append(methodCell);
+	
     const confidenceCell = $("<td>");
 
     const confidence = $("<span>")
@@ -140,6 +366,77 @@ function addSuggestionRow(suggestion) {
 
     row.append(confidenceCell);
 
+	const transformationSelect =
+	    $("<select>")
+	        .addClass("transformation-select");
+
+	const transformations = [
+	    "DIRECT",
+	    "DEFAULT",
+	    "CONSTANT",
+	    "TRIM",
+	    "UPPERCASE",
+	    "LOWERCASE",
+	    "DATE_FORMAT"
+	];
+
+	transformations.forEach(function (transformation) {
+
+	    transformationSelect.append(
+	        $("<option>")
+	            .val(transformation)
+	            .text(transformation)
+	    );
+	});
+	
+	const transformationConfig =
+	    $("<input>")
+	        .attr("type", "text")
+	        .addClass("transformation-config")
+	        .hide();
+
+
+	
+	transformationSelect.change(function () {
+
+	    const transformation =
+	        $(this).val();
+
+	    transformationConfig
+	        .val("")
+	        .hide();
+
+	    if (transformation === "DEFAULT") {
+
+	        transformationConfig
+	            .attr("placeholder", "Default value")
+	            .show();
+	    }
+
+	    else if (transformation === "CONSTANT") {
+
+	        transformationConfig
+	            .attr("placeholder", "Constant value")
+	            .show();
+	    }
+
+	    else if (transformation === "DATE_FORMAT") {
+
+	        transformationConfig
+	            .attr(
+	                "placeholder",
+	                "e.g. M/d/yy -> yyyy-MM-dd"
+	            )
+	            .show();
+	    }
+	});
+	
+	const transformationCell =
+	    $("<td>")
+	        .append(transformationSelect)
+	        .append(transformationConfig);
+
+	row.append(transformationCell);
 
     const actionCell = $("<td>");
 
@@ -148,14 +445,27 @@ function addSuggestionRow(suggestion) {
             .addClass("accept-button")
             .text("Accept");
 
-    acceptButton.click(function () {
+			acceptButton.click(function () {
 
-        acceptMapping(
-            suggestion,
-            row
-        );
+			    const selectedTargetFieldId =
+			        parseInt(
+			            targetSelect.val()
+			        );
 
-    });
+				const selectedTransformation =
+					   transformationSelect.val();
+					   
+				const selectedTransformationConfig =
+					   transformationConfig.val();
+					
+			    acceptMapping(
+			        suggestion,
+			        selectedTargetFieldId,
+					selectedTransformation,
+					selectedTransformationConfig,
+			        row
+			    );
+			});
 
     actionCell.append(acceptButton);
 
@@ -167,8 +477,15 @@ function addSuggestionRow(suggestion) {
 
 function acceptMapping(
     suggestion,
+    selectedTargetFieldId,
+	selectedTransformation,
+	selectedTransformationConfig,
     row
 ) {
+
+    const wasOverridden =
+        selectedTargetFieldId !==
+        suggestion.targetFieldId;
 
     const request = {
 
@@ -176,13 +493,18 @@ function acceptMapping(
             suggestion.sourceColumnId,
 
         targetFieldId:
-            suggestion.targetFieldId,
+            selectedTargetFieldId,
 
         transformation:
-            "DIRECT",
+            selectedTransformation,
+			
+		transformationConfig:
+			selectedTransformationConfig || null,
 
-        mappingMethod:
-            "AI",
+			mappingMethod:
+			    wasOverridden
+			        ? "MANUAL"
+			        : suggestion.mappingMethod,
 
         aiConfidence:
             suggestion.confidence,
@@ -208,13 +530,24 @@ function acceptMapping(
 
             row.find(".accept-button")
                 .prop("disabled", true)
-                .text("Accepted");
+                .text(
+                    wasOverridden
+                        ? "Overridden"
+                        : "Accepted"
+                );
 
+            targetSelectDisabled(row);
+
+			row.find(".transformation-select")
+			    .prop("disabled", true);
+				
+			row.find(".transformation-config")
+				.prop("disabled", true);
+			
             showMessage(
-                suggestion.sourceColumnName +
-                " → " +
-                suggestion.targetFieldName +
-                " saved.",
+                wasOverridden
+                    ? "Manual override saved."
+                    : "Mapping accepted.",
                 "success"
             );
         },
@@ -223,21 +556,19 @@ function acceptMapping(
 
             console.error(xhr);
 
-            let message =
-                "Could not save mapping.";
-
-            if (xhr.responseText) {
-                message += " " + xhr.responseText;
-            }
-
             showMessage(
-                message,
+                "Could not save mapping.",
                 "error"
             );
         }
     });
 }
 
+function targetSelectDisabled(row) {
+
+    row.find(".target-select")
+        .prop("disabled", true);
+}
 
 function showMessage(
     message,
@@ -323,7 +654,7 @@ function uploadExcel() {
             }
 
 
-            const sheetName =
+            sheetName =
                 sheetNames[0];
 
 
@@ -419,10 +750,66 @@ function profileSheet(
     });
 }
 
-function saveSourceProfile(
-    file,
-    sheetName
-) {
+function displayMappedPreview(rows) {
+
+    const table =
+        $("#previewTable");
+
+    const thead =
+        table.find("thead");
+
+    const tbody =
+        table.find("tbody");
+
+    thead.empty();
+    tbody.empty();
+
+    if (!rows || rows.length === 0) {
+
+        showMessage(
+            "No preview data available.",
+            "error"
+        );
+
+        return;
+    }
+
+    const headers =
+        Object.keys(rows[0]);
+
+    const headerRow =
+        $("<tr>");
+
+    headers.forEach(function (header) {
+
+        headerRow.append(
+            $("<th>").text(header)
+        );
+    });
+
+    thead.append(headerRow);
+
+    rows.forEach(function (row) {
+
+        const tableRow =
+            $("<tr>");
+
+        headers.forEach(function (header) {
+
+            tableRow.append(
+                $("<td>").text(
+                    row[header] ?? ""
+                )
+            );
+        });
+
+        tbody.append(tableRow);
+    });
+
+    $("#previewSection").show();
+}
+
+function saveSourceProfile(file, sheetName) {
 
     const formData =
         new FormData();
@@ -471,14 +858,25 @@ function saveSourceProfile(
                 return;
             }
 
-            $("#sourceProfileId")
-                .val(sourceProfile.id);
+            $("#sourceProfileId").val(sourceProfile.id);
+			
+			showUploadMessage(
+			    "Excel file profiled and saved successfully. Source Profile ID: "
+			        + sourceProfile.id,
+			    "success"
+			);
+			
+			const templateVersionId =
+			    $("#templateVersionId").val();
 
-            showUploadMessage(
-                "Excel file profiled and saved successfully. Source Profile ID: "
-                    + sourceProfile.id,
-                "success"
-            );
+		/*	if (templateVersionId) {
+
+			    loadSuggestions(
+			        sourceProfile.id,
+			        templateVersionId
+			    );
+			}*/
+
         },
 
         error: function (xhr) {

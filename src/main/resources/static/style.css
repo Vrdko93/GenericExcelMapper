@@ -40,7 +40,7 @@ label {
     font-weight: bold;
 }
 
-input {
+input, select {
     padding: 9px;
     width: 180px;
 }
@@ -53,8 +53,8 @@ button {
 }
 
 #loadSuggestions {
-    background: #222;
-    color: white;
+	background: #0d6efd;
+	color: white;
 }
 
 table {
@@ -174,4 +174,66 @@ th {
 
 #profileTable {
     margin-top: 15px;
+}
+
+.target-select {
+    min-width: 180px;
+    padding: 7px;
+}
+
+.method-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.method-ai {
+    background: #d1e7dd;
+}
+
+.method-deterministic {
+    background: #d1e7dd;
+}
+
+.method-manual {
+    background: #fff3cd;
+}
+
+.transformation-select {
+    min-width: 140px;
+    padding: 7px;
+}
+
+.transformation-config {
+    display: block;
+    margin-top: 6px;
+    width: 190px;
+    padding: 7px;
+}
+
+#previewMappedData {
+    background: #0d6efd;
+    color: white;
+}
+
+#previewSection {
+    margin-top: 30px;
+}
+
+#previewTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#previewTable th,
+#previewTable td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+#previewTable th {
+    font-weight: 600;
 }
