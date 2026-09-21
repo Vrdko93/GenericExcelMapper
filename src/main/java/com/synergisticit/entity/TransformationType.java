@@ -8,5 +8,6 @@ public enum TransformationType {
     TRIM,
     UPPERCASE,
     LOWERCASE,
-    DATE_FORMAT
+    DATE_FORMAT,
+    CURRENCY_TO_NUMBER
 }

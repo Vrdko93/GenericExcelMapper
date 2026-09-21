@@ -17,10 +17,16 @@ import org.springframework.web.multipart.MultipartFile;
 import com.synergisticit.dto.MappingOverrideRequest;
 import com.synergisticit.dto.MappingRequest;
 import com.synergisticit.dto.MappingResponse;
+import com.synergisticit.dto.ValidationError;
 import com.synergisticit.entity.Mapping;
+import com.synergisticit.service.ExcelExportService;
 import com.synergisticit.service.MappingExecutionService;
 import com.synergisticit.service.MappingService;
+import com.synergisticit.service.MappingValidationService;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/mappings")
@@ -29,6 +35,8 @@ public class MappingController {
 
     private final MappingService mappingService;
     private final MappingExecutionService mappingExecutionService;
+    private final MappingValidationService mappingValidationService;
+    private final ExcelExportService excelExportService;
 
     @PostMapping
     public MappingResponse createMapping(
@@ -82,5 +90,58 @@ public class MappingController {
                 sheet,
                 sourceProfileId
         );
+    }
+    
+    @PostMapping(value = "/validate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public List<ValidationError> validate(
+            @RequestParam MultipartFile file,
+            @RequestParam String sheet,
+            @RequestParam Long sourceProfileId,
+            @RequestParam Long templateVersionId)
+            throws IOException {
+
+        List<Map<String, String>> rows =
+                mappingExecutionService.preview(
+                        file,
+                        sheet,
+                        sourceProfileId
+                );
+
+        return mappingValidationService.validate(
+                rows,
+                templateVersionId
+        );
+    }
+    
+    @PostMapping(
+            value = "/export",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<byte[]> export(
+            @RequestParam MultipartFile file,
+            @RequestParam String sheet,
+            @RequestParam Long sourceProfileId,
+            @RequestParam Long templateVersionId)
+            throws IOException {
+
+        byte[] excel =
+                excelExportService.export(
+                        file,
+                        sheet,
+                        sourceProfileId,
+                        templateVersionId
+                );
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"mapped-output.xlsx\""
+                )
+                .contentType(
+                        MediaType.parseMediaType(
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                )
+                .body(excel);
     }
 }

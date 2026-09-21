@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Template Designer</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Template Designer</h1>
+
+    <div class="panel">
+
+        <h2>Template Version</h2>
+
+        <div class="controls">
+
+            <label for="designerTemplateVersionId">
+                Template Version ID
+            </label>
+
+            <input
+                type="number"
+                id="designerTemplateVersionId"
+                value="1"
+                min="1"
+            >
+
+            <button id="loadTargetFields">
+                Load Target Fields
+            </button>
+
+        </div>
+
+        <div id="designerMessage"></div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <div class="designer-header">
+
+            <h2>Target Fields</h2>
+
+			<button id="addTargetField">
+			    + Add Field
+			</button>
+
+        </div>
+
+		<div id="targetFieldForm" style="display:none;">
+
+		    <h3>Add Target Field</h3>
+
+		    <div class="field-form-grid">
+
+		        <div>
+		            <label for="fieldName">Field Name</label>
+		            <input type="text" id="fieldName">
+		        </div>
+
+		        <div>
+		            <label for="fieldKey">Key</label>
+		            <input type="text" id="fieldKey">
+		        </div>
+
+		        <div>
+		            <label for="fieldDataType">Data Type</label>
+
+		            <select id="fieldDataType">
+		                <option value="STRING">STRING</option>
+		                <option value="INTEGER">INTEGER</option>
+		                <option value="DECIMAL">DECIMAL</option>
+		                <option value="DATE">DATE</option>
+		                <option value="BOOLEAN">BOOLEAN</option>
+		                <option value="EMAIL">EMAIL</option>
+		            </select>
+		        </div>
+
+
+		        <div>
+		            <label for="fieldMandatory">Required</label>
+		            <input type="checkbox" id="fieldMandatory">
+		        </div>
+
+		        <div>
+		            <label for="fieldDefaultValue">Default Value</label>
+		            <input type="text" id="fieldDefaultValue">
+		        </div>
+
+		    </div>
+
+		    <div>
+		        <label for="fieldDescription">Description</label>
+
+		        <textarea
+		            id="fieldDescription"
+		            rows="3"
+		        ></textarea>
+		    </div>
+
+		    <div class="field-form-actions">
+
+		        <button id="saveTargetField">
+		            Save Field
+		        </button>
+
+		        <button id="cancelTargetField">
+		            Cancel
+		        </button>
+
+		    </div>
+
+		</div>
+		
+        <table id="targetFieldsTable">
+
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Field Name</th>
+                <th>Key</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Default Value</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+
+            <tbody></tbody>
+
+        </table>
+
+    </div>
+
+    <a href="index.html">
+        Back to Mapping
+    </a>
+
+</div>
+
+<script src="template-designer.js"></script>
+
+</body>
+
+</html>

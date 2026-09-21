@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -109,6 +110,9 @@ public class MappingExecutionService {
 
             case DATE_FORMAT ->
                     formatDate(value, config);
+                    
+            case CURRENCY_TO_NUMBER ->
+            		currencyToNumber(value);
         };
     }
 
@@ -184,5 +188,35 @@ public class MappingExecutionService {
         return date.format(
                 targetFormatter
         );
+    }
+    
+    private String currencyToNumber(String value) {
+
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        String cleaned = value
+                .trim()
+                .replaceAll("[,$£€¥\\s]", "");
+
+        if (cleaned.isBlank()) {
+            return "";
+        }
+
+        try {
+
+            BigDecimal number =
+                    new BigDecimal(cleaned);
+
+            return number.stripTrailingZeros()
+                    .toPlainString();
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "Invalid currency value: " + value
+            );
+        }
     }
 }

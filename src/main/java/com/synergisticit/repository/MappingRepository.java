@@ -12,4 +12,6 @@ public interface MappingRepository extends JpaRepository<Mapping, Long> {
     boolean existsByTargetFieldId(Long targetFieldId);
     
     List<Mapping> findBySourceColumnSourceProfileId(Long sourceProfileId);
+    
+    boolean existsByAiRecommendedTargetFieldId(Long targetFieldId);
 }

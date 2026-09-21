@@ -214,7 +214,7 @@ th {
 }
 
 #previewMappedData {
-    background: #0d6efd;
+    background: red;
     color: white;
 }
 
@@ -236,4 +236,173 @@ th {
 
 #previewTable th {
     font-weight: 600;
+}
+
+#validationResults {
+    margin-top: 20px;
+}
+
+.validation-success {
+    padding: 12px;
+    border: 1px solid #28a745;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.validation-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.validation-table th,
+.validation-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+#validateMappedData {
+	
+    background: green;
+    color: white;
+}
+
+#exportExcel {
+	background: #0d6efd;
+	color: white;
+}
+
+#exportMessage {
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.export-error {
+    color: #b00020;
+}
+
+.export-success {
+    color: #198754;
+}
+
+.designer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#loadTargetFields {
+	background: #0d6efd;
+	color: white;
+}
+
+#targetFieldsTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#targetFieldsTable th,
+#targetFieldsTable td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+#targetFieldsTable th {
+    font-weight: 600;
+}
+
+#designerMessage {
+    margin-top: 12px;
+    font-weight: 600;
+}
+
+.designer-success {
+    color: #198754;
+}
+
+.designer-error {
+    color: #b00020;
+}
+
+.edit-field-button {
+    padding: 6px 12px;
+	background: #0d6efd;
+	color: white;
+}
+
+#targetFieldForm {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.field-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.field-form-grid label,
+#targetFieldForm > div > label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.field-form-grid input:not([type="checkbox"]),
+.field-form-grid select,
+#fieldDescription {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+}
+
+#fieldDescription {
+    resize: vertical;
+}
+
+.field-form-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+#addTargetField {
+	background: green;
+	color: white;
+}
+
+.delete-field-button {
+    margin-left: 8px;
+    padding: 6px 12px;
+	background: red;
+	color : white;
+}
+
+#cancelTargetField {
+	background: red;
+	color: white;
+}
+
+#saveTargetField {
+	background: green;
+	color: white;	
+}
+
+.move-field-button {
+    margin-right: 4px;
+    padding: 6px 10px;
+	background-color: grey;
+	color: white;
+}
+
+.move-field-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+	background-color: grey;
 }

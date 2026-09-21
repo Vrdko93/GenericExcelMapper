@@ -112,7 +112,221 @@ $(document).ready(function () {
 	        }
 	    });
 	});
+	
+	$("#validateMappedData").click(function () {
+
+	    const file =
+	        $("#excelFile")[0].files[0];
+
+	    const sourceProfileId =
+	        $("#sourceProfileId").val();
+
+	    const templateVersionId =
+	        $("#templateVersionId").val();
+
+	    if (!file || !sourceProfileId) {
+	        showMessage(
+	            "Please upload and map an Excel file first.",
+	            "error"
+	        );
+	        return;
+	    }
+
+	    const formData = new FormData();
+
+	    formData.append("file", file);
+	    formData.append("sheet", sheetName);
+	    formData.append(
+	        "sourceProfileId",
+	        sourceProfileId
+	    );
+	    formData.append(
+	        "templateVersionId",
+	        templateVersionId
+	    );
+
+	    $.ajax({
+	        url: "/api/mappings/validate",
+	        method: "POST",
+	        data: formData,
+	        processData: false,
+	        contentType: false,
+
+	        success: function (errors) {
+	            displayValidationResults(errors);
+	        },
+
+	        error: function (xhr) {
+	            console.error(xhr);
+
+	            showMessage(
+	                "Could not validate mapped data.",
+	                "error"
+	            );
+	        }
+	    });
+	});
+	
+	$("#exportExcel").click(function () {
+		
+		$("#exportMessage")
+		    .removeClass(
+		        "export-error export-success"
+		    )
+		    .text("");
+
+	    const file =
+	        $("#excelFile")[0].files[0];
+
+	    const sourceProfileId =
+	        $("#sourceProfileId").val();
+
+	    const templateVersionId =
+	        $("#templateVersionId").val();
+
+	    if (!file || !sourceProfileId) {
+
+	        showMessage(
+	            "Please upload and map an Excel file first.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    const formData = new FormData();
+
+	    formData.append("file", file);
+	    formData.append("sheet", sheetName);
+	    formData.append(
+	        "sourceProfileId",
+	        sourceProfileId
+	    );
+	    formData.append(
+	        "templateVersionId",
+	        templateVersionId
+	    );
+
+	    // Validate BEFORE attempting export
+	    $.ajax({
+
+	        url: "/api/mappings/validate",
+	        method: "POST",
+	        data: formData,
+	        processData: false,
+	        contentType: false,
+
+	        success: function (errors) {
+
+	            if (errors && errors.length > 0) {
+
+	                displayValidationResults(errors);
+
+					$("#exportMessage")
+					    .removeClass("export-success")
+					    .addClass("export-error")
+					    .text(
+					        "Export blocked. Please fix validation errors first."
+					    );
+
+	                return;
+	            }
+
+	            // Validation passed
+	            exportMappedExcel(
+	                file,
+	                sourceProfileId,
+	                templateVersionId
+	            );
+	        },
+
+	        error: function (xhr) {
+
+	            console.error(xhr);
+
+	            showMessage(
+	                "Could not validate data before export.",
+	                "error"
+	            );
+	        }
+	    });
+	});
 });
+
+let availableTargetFields = [];
+let sheetName = null;
+
+function displayValidationResults(errors) {
+
+    const container =
+        $("#validationResults");
+
+    container.empty();
+
+    if (!errors || errors.length === 0) {
+
+        container.append(
+            $("<div>")
+                .addClass("validation-success")
+                .text(
+                    "Validation passed. No errors found."
+                )
+        );
+
+        return;
+    }
+
+    container.append(
+        $("<h3>").text(
+            "Validation Errors (" +
+            errors.length +
+            ")"
+        )
+    );
+
+    const table =
+        $("<table>")
+            .addClass("validation-table");
+
+    const header =
+        $("<tr>")
+            .append($("<th>").text("Excel Row"))
+            .append($("<th>").text("Target Field"))
+            .append($("<th>").text("Error"));
+
+    table.append(
+        $("<thead>").append(header)
+    );
+
+    const tbody = $("<tbody>");
+
+    errors.forEach(function (error) {
+
+        const row =
+            $("<tr>")
+                .append(
+                    $("<td>").text(
+                        error.rowNumber
+                    )
+                )
+                .append(
+                    $("<td>").text(
+                        error.targetField
+                    )
+                )
+                .append(
+                    $("<td>").text(
+                        error.message
+                    )
+                );
+
+        tbody.append(row);
+    });
+
+    table.append(tbody);
+
+    container.append(table);
+}
 
 function loadMappingProfiles(
     templateVersionId
@@ -163,8 +377,7 @@ function loadMappingProfiles(
     });
 }
 
-let availableTargetFields = [];
-let sheetName = null;
+
 
 function loadTargetFields(templateVersionId, callback) {
 
@@ -377,7 +590,8 @@ function addSuggestionRow(suggestion) {
 	    "TRIM",
 	    "UPPERCASE",
 	    "LOWERCASE",
-	    "DATE_FORMAT"
+	    "DATE_FORMAT",
+		"CURRENCY_TO_NUMBER"
 	];
 
 	transformations.forEach(function (transformation) {
@@ -968,4 +1182,99 @@ function showUploadMessage(
         )
         .addClass(type)
         .text(message);
+}
+
+function exportMappedExcel(
+    file,
+    sourceProfileId,
+    templateVersionId
+) {
+
+    const formData =
+        new FormData();
+
+    formData.append("file", file);
+    formData.append(
+        "sheet",
+        sheetName
+    );
+    formData.append(
+        "sourceProfileId",
+        sourceProfileId
+    );
+    formData.append(
+        "templateVersionId",
+        templateVersionId
+    );
+
+    $.ajax({
+
+        url: "/api/mappings/export",
+        method: "POST",
+
+        data: formData,
+
+        processData: false,
+        contentType: false,
+
+        xhrFields: {
+            responseType: "blob"
+        },
+
+        success: function (data) {
+
+            const blob =
+                new Blob(
+                    [data],
+                    {
+                        type:
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    }
+                );
+
+            const url =
+                window.URL.createObjectURL(
+                    blob
+                );
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+
+            link.download =
+                "mapped-output.xlsx";
+
+            document.body.appendChild(
+                link
+            );
+
+            link.click();
+
+            link.remove();
+
+            window.URL.revokeObjectURL(
+                url
+            );
+
+			$("#exportMessage")
+			    .removeClass("export-error")
+			    .addClass("export-success")
+			    .text(
+			        "Excel file exported successfully."
+			    );
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+			$("#exportMessage")
+			    .removeClass("export-success")
+			    .addClass("export-error")
+			    .text(
+			        "Excel export failed."
+			    );
+        }
+    });
 }
