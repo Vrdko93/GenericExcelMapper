@@ -22,137 +22,69 @@ public class ExcelExportService {
     private final MappingValidationService mappingValidationService;
     private final TargetFieldRepository targetFieldRepository;
 
-    public byte[] export(
-            MultipartFile file,
-            String sheetName,
-            Long sourceProfileId,
-            Long templateVersionId) throws IOException {
+    public byte[] export(MultipartFile file, String sheetName, Long sourceProfileId, Long templateVersionId) throws IOException {
 
         // 1. Execute mappings + transformations
-        List<Map<String, String>> rows =
-                mappingExecutionService.preview(
-                        file,
-                        sheetName,
-                        sourceProfileId
-                );
+        List<Map<String, String>> rows = mappingExecutionService.preview(file, sheetName, sourceProfileId);
 
         // 2. Validate transformed data
-        List<ValidationError> errors =
-                mappingValidationService.validate(
-                        rows,
-                        templateVersionId
-                );
+        List<ValidationError> errors = mappingValidationService.validate(rows, templateVersionId);
 
         if (!errors.isEmpty()) {
-            throw new IllegalStateException(
-                    "Export failed. Validation errors found: "
-                            + errors.size()
-            );
+            throw new IllegalStateException("Export failed. Validation errors found: " + errors.size());
         }
 
         // 3. Get official target-field order
-        List<TargetField> targetFields =
-                targetFieldRepository
-                        .findByTemplateVersionIdOrderBySequence(
-                                templateVersionId
-                        );
+        List<TargetField> targetFields = targetFieldRepository.findByTemplateVersionIdOrderBySequence(templateVersionId);
 
         // 4. Build Excel workbook
-        try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream outputStream =
-                     new ByteArrayOutputStream()) {
+        try (Workbook workbook = new XSSFWorkbook(); 
+        	 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            Sheet sheet =
-                    workbook.createSheet("Mapped Data");
+            Sheet sheet = workbook.createSheet("Mapped Data");
 
-            createHeaderRow(
-                    sheet,
-                    targetFields
-            );
+            createHeaderRow(sheet, targetFields);
+            createDataRows(sheet, rows, targetFields);
 
-            createDataRows(
-                    sheet,
-                    rows,
-                    targetFields
-            );
-
-            autoSizeColumns(
-                    sheet,
-                    targetFields.size()
-            );
-
+            autoSizeColumns(sheet, targetFields.size());
             workbook.write(outputStream);
 
             return outputStream.toByteArray();
         }
     }
 
-    private void createHeaderRow(
-            Sheet sheet,
-            List<TargetField> targetFields) {
+    private void createHeaderRow(Sheet sheet, List<TargetField> targetFields) {
 
-        Row headerRow =
-                sheet.createRow(0);
+        Row headerRow = sheet.createRow(0);
 
-        for (int i = 0;
-             i < targetFields.size();
-             i++) {
+        for (int i = 0; i < targetFields.size(); i++) {
 
-            Cell cell =
-                    headerRow.createCell(i);
-
-            cell.setCellValue(
-                    targetFields.get(i).getName()
-            );
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(targetFields.get(i).getName());
         }
     }
 
-    private void createDataRows(
-            Sheet sheet,
-            List<Map<String, String>> rows,
-            List<TargetField> targetFields) {
+    private void createDataRows(Sheet sheet, List<Map<String, String>> rows, List<TargetField> targetFields) {
 
-        for (int rowIndex = 0;
-             rowIndex < rows.size();
-             rowIndex++) {
+        for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
 
-            Map<String, String> data =
-                    rows.get(rowIndex);
+            Map<String, String> data = rows.get(rowIndex);
+            Row excelRow = sheet.createRow(rowIndex + 1);
 
-            Row excelRow =
-                    sheet.createRow(rowIndex + 1);
+            for (int columnIndex = 0; columnIndex < targetFields.size(); columnIndex++) {
 
-            for (int columnIndex = 0;
-                 columnIndex < targetFields.size();
-                 columnIndex++) {
+                TargetField field = targetFields.get(columnIndex);
+                String value = data.getOrDefault(field.getName(), "");
 
-                TargetField field =
-                        targetFields.get(columnIndex);
-
-                String value =
-                        data.getOrDefault(
-                                field.getName(),
-                                ""
-                        );
-
-                Cell cell =
-                        excelRow.createCell(
-                                columnIndex
-                        );
-
+                Cell cell = excelRow.createCell(columnIndex);
                 cell.setCellValue(value);
             }
         }
     }
 
-    private void autoSizeColumns(
-            Sheet sheet,
-            int numberOfColumns) {
+    private void autoSizeColumns(Sheet sheet, int numberOfColumns) {
 
-        for (int i = 0;
-             i < numberOfColumns;
-             i++) {
-
+        for (int i = 0; i < numberOfColumns; i++) {
             sheet.autoSizeColumn(i);
         }
     }

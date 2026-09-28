@@ -15,7 +15,19 @@
 
 <div class="container">
 
-    <h1>Generic Excel Mapper</h1>
+	<div class="page-header">
+
+	    <h1>Generic Excel Mapper</h1>
+
+	    <a
+	        href="template-designer.html"
+	        class="template-designer-button">
+
+	        Access Template Designer
+
+	    </a>
+
+	</div>
 
 	<section class="panel">
 
@@ -128,10 +140,28 @@
 
     </section>
 	
+	<section id="mappingReviewSection" style="display: none;">
+	    <h2>Mapping Review</h2>
+
+	    <table id="mappingReviewTable">
+	        <thead>
+	        <tr>
+	            <th>Source Column</th>
+	            <th>Final Target</th>
+	            <th>Method</th>
+	            <th>AI Recommendation</th>
+	            <th>AI Confidence</th>
+	            <th>Transformation</th>
+	        </tr>
+	        </thead>
+	        <tbody></tbody>
+	    </table>
+	</section>
+	<br>
 	<button id="previewMappedData">
 	    Preview Mapped Data
 	</button>
-
+	<br>
 	<div id="previewSection" style="display:none;">
 
 	    <h3>Mapped Data Preview</h3>
@@ -142,21 +172,19 @@
 	    </table>
 
 	</div>
-
+	<br>
 	<button id="validateMappedData">
 	    Validate Mapped Data
 	</button>
 
 	<div id="validationResults"></div>
-	
+	<br>
 	<button id="exportExcel">
 	    Export Excel
 	</button>
 
 	<div id="exportMessage"></div>
-	<a href="template-designer.html">
-	    Template Designer
-	</a>
+
 </div>
 
 <script src="app.js"></script>

@@ -1,28 +1,291 @@
 $(document).ready(function () {
 
-    $("#loadTargetFields").click(function () {
+	loadTemplates();
+	
+	$("#designerTemplate").change(function () {
 
-        const templateVersionId =
-            $("#designerTemplateVersionId").val();
+	    const templateId =
+	        $(this).val();
 
-        if (!templateVersionId) {
+	    const versionSelect =
+	        $("#designerTemplateVersion");
+			
+		$("#newVersion").prop(
+			"disabled",
+			!templateId
+		);
 
-            showDesignerMessage(
-                "Please enter a Template Version ID.",
-                "error"
-            );
+	    versionSelect.empty();
 
-            return;
-        }
+	    versionSelect.append(
+	        $("<option>")
+	            .val("")
+	            .text("Select Version")
+	    );
 
-        loadTargetFields(templateVersionId);
-    });
+	    if (!templateId) {
 
+	        versionSelect.prop(
+	            "disabled",
+	            true
+	        );
 
-    // Automatically load version 1 for now
-    loadTargetFields(
-        $("#designerTemplateVersionId").val()
-    );
+	        return;
+	    }
+
+	    loadTemplateVersions(templateId);
+	});
+	
+	$("#designerTemplateVersion").change(function () {
+
+	    const templateVersionId =
+	        $(this).val();
+
+	    if (!templateVersionId) {
+
+	        $("#versionStatus").hide();
+	        return;
+	    }
+
+	    loadTargetFields(templateVersionId);
+
+	    displayVersionStatus(
+	        templateVersionId
+	    );
+	});
+	
+	$("#newTemplate").click(function () {
+
+	    $("#newTemplateName").val("");
+	    $("#newTemplateDescription").val("");
+
+	    $("#newTemplateForm").show();
+	});
+	
+	$("#cancelTemplate").click(function () {
+
+	    $("#newTemplateForm").hide();
+
+	    $("#newTemplateName").val("");
+	    $("#newTemplateDescription").val("");
+	});
+	
+	$("#newVersion").click(function () {
+
+	    if (!$("#designerTemplate").val()) {
+	        return;
+	    }
+
+	    $("#newVersionName").val("");
+	    $("#newVersionEffectiveDate").val("");
+	    $("#newVersionPublishedBy").val("");
+
+	    $("#newVersionForm").show();
+	});
+	
+	$("#cancelVersion").click(function () {
+
+	    $("#newVersionForm").hide();
+
+	    $("#newVersionName").val("");
+	    $("#newVersionEffectiveDate").val("");
+	    $("#newVersionPublishedBy").val("");
+	});
+	
+	$("#saveTemplate").click(function () {
+
+	    const name =
+	        $("#newTemplateName").val().trim();
+
+	    const description =
+	        $("#newTemplateDescription").val().trim();
+
+	    if (!name) {
+
+	        showDesignerMessage(
+	            "Template name is required.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    const request = {
+	        name: name,
+	        description: description || null
+	    };
+
+	    $.ajax({
+
+	        url: "/api/templates",
+
+	        method: "POST",
+
+	        contentType: "application/json",
+
+	        data: JSON.stringify(request),
+
+	        success: function (template) {
+
+	            $("#newTemplateForm").hide();
+
+	            showDesignerMessage(
+	                "Template created successfully.",
+	                "success"
+	            );
+
+	            loadTemplatesAndSelect(
+	                template.id
+	            );
+	        },
+
+	        error: function (xhr) {
+
+	            console.error(xhr);
+
+	            showDesignerMessage(
+	                "Could not create template.",
+	                "error"
+	            );
+	        }
+	    });
+	});
+	
+	$("#saveVersion").click(function () {
+
+	    const templateId =
+	        $("#designerTemplate").val();
+
+	    const version =
+	        $("#newVersionName").val().trim();
+
+	    const effectiveDate =
+	        $("#newVersionEffectiveDate").val();
+
+	    const publishedBy =
+	        $("#newVersionPublishedBy").val().trim();
+
+	    if (!templateId) {
+
+	        showDesignerMessage(
+	            "Please select a template.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    if (!version) {
+
+	        showDesignerMessage(
+	            "Version is required.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    const request = {
+	        version: version,
+	        effectiveDate: effectiveDate || null,
+	        publishedBy: publishedBy || null
+	    };
+
+	    $.ajax({
+
+	        url:
+	            "/api/templates/" +
+	            templateId +
+	            "/versions",
+
+	        method: "POST",
+
+	        contentType: "application/json",
+
+	        data: JSON.stringify(request),
+
+	        success: function (createdVersion) {
+
+	            $("#newVersionForm").hide();
+
+	            showDesignerMessage(
+	                "Template version created successfully.",
+	                "success"
+	            );
+
+	            loadTemplateVersionsAndSelect(
+	                templateId,
+	                createdVersion.id
+	            );
+	        },
+
+	        error: function (xhr) {
+
+	            console.error(xhr);
+
+	            showDesignerMessage(
+	                "Could not create template version.",
+	                "error"
+	            );
+	        }
+	    });
+	});
+	
+	$("#activateVersion").click(function () {
+
+	    const versionId =
+	        $("#designerTemplateVersion").val();
+
+	    const templateId =
+	        $("#designerTemplate").val();
+
+	    if (!versionId || !templateId) {
+	        return;
+	    }
+
+	    const confirmed =
+	        confirm(
+	            "Activate this template version? " +
+	            "The currently active version will become inactive."
+	        );
+
+	    if (!confirmed) {
+	        return;
+	    }
+
+	    $.ajax({
+
+	        url:
+	            "/api/templates/versions/" +
+	            versionId +
+	            "/activate",
+
+	        method: "PUT",
+
+	        success: function () {
+
+	            showDesignerMessage(
+	                "Template version activated successfully.",
+	                "success"
+	            );
+
+	            loadTemplateVersionsAndSelect(
+	                templateId,
+	                versionId
+	            );
+	        },
+
+	        error: function (xhr) {
+
+	            console.error(xhr);
+
+	            showDesignerMessage(
+	                "Could not activate template version.",
+	                "error"
+	            );
+	        }
+	    });
+	});
 	
 	$("#addTargetField").click(function () {
 
@@ -57,7 +320,7 @@ $(document).ready(function () {
 	$("#saveTargetField").click(function () {
 
 	    const templateVersionId =
-	        $("#designerTemplateVersionId").val();
+	        $("#designerTemplateVersion").val();
 
 	    const name =
 	        $("#fieldName").val().trim();
@@ -155,9 +418,381 @@ $(document).ready(function () {
 		    }
 		});
 	});
+	
+	$("#addValidationRule").click(function () {
+
+	    editingValidationRuleId = null;
+
+	    $("#validationRuleType").val("");
+	    $("#validationRuleValue").val("");
+	    $("#validationRuleErrorMessage").val("");
+	    $("#validationRuleSequence").val("");
+	    $("#validationRuleActive").prop("checked", true);
+
+	    $("#validationRuleForm h3")
+	        .text("Add Validation Rule");
+
+	    $("#saveValidationRule")
+	        .text("Save Rule");
+
+	    $("#validationRuleForm").show();
+	});
+	
+	$("#cancelValidationRule").click(function () {
+
+	    editingValidationRuleId = null;
+
+	    $("#validationRuleForm").hide();
+
+	    $("#validationRuleForm h3")
+	        .text("Add Validation Rule");
+
+	    $("#saveValidationRule")
+	        .text("Save Rule");
+	});
+	
+	$("#saveValidationRule").click(function () {
+
+	    if (!currentValidationFieldId) {
+	        return;
+	    }
+
+	    const ruleType =
+	        $("#validationRuleType").val();
+
+	    const ruleValue =
+	        $("#validationRuleValue").val().trim();
+
+	    const errorMessage =
+	        $("#validationRuleErrorMessage").val().trim();
+
+	    const sequence =
+	        $("#validationRuleSequence").val();
+
+	    const active =
+	        $("#validationRuleActive").is(":checked");
+
+	    if (!ruleType) {
+
+	        showDesignerMessage(
+	            "Rule type is required.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    if (!sequence) {
+
+	        showDesignerMessage(
+	            "Sequence is required.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    const request = {
+	        ruleType: ruleType,
+	        ruleValue: ruleValue || null,
+	        errorMessage: errorMessage || null,
+	        sequence: parseInt(sequence),
+	        active: active
+	    };
+
+		const isEditing =
+		    editingValidationRuleId !== null;
+
+		const url =
+		    isEditing
+		        ? "/api/templates/validation-rules/" +
+		          editingValidationRuleId
+		        : "/api/templates/fields/" +
+		          currentValidationFieldId +
+		          "/validation-rules";
+
+		const method =
+		    isEditing ? "PUT" : "POST";
+		
+			$.ajax({
+
+			    url: url,
+			    method: method,
+
+			    contentType: "application/json",
+
+			    data: JSON.stringify(request),
+
+			    success: function () {
+
+			        const message =
+			            isEditing
+			                ? "Validation rule updated successfully."
+			                : "Validation rule created successfully.";
+
+			        editingValidationRuleId = null;
+
+			        $("#validationRuleForm").hide();
+
+			        reloadValidationRules();
+
+			        showDesignerMessage(
+			            message,
+			            "success"
+			        );
+			    },
+
+			    error: function (xhr) {
+
+			        console.error(xhr);
+
+			        showDesignerMessage(
+			            isEditing
+			                ? "Could not update validation rule."
+			                : "Could not create validation rule.",
+			            "error"
+			        );
+			    }
+			});
+	});
 });
 
 let editingTargetFieldId = null;
+let currentTemplateVersions = [];
+let currentValidationFieldId = null;
+let editingValidationRuleId = null;
+
+function loadTemplates() {
+
+    $.ajax({
+        url: "/api/templates",
+        method: "GET",
+
+        success: function (templates) {
+
+            const select =
+                $("#designerTemplate");
+
+            select.empty();
+
+            select.append(
+                $("<option>")
+                    .val("")
+                    .text("Select Template")
+            );
+
+            templates.forEach(function (template) {
+
+                select.append(
+                    $("<option>")
+                        .val(template.id)
+                        .text(template.name)
+                );
+            });
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+            showDesignerMessage(
+                "Could not load templates.",
+                "error"
+            );
+        }
+    });
+}
+
+function loadTemplateVersions(templateId) {
+
+    $.ajax({
+
+        url:
+            "/api/templates/" +
+            templateId +
+            "/versions",
+
+        method: "GET",
+
+        success: function (versions) {
+
+			currentTemplateVersions = versions;
+			
+            const select =
+                $("#designerTemplateVersion");
+
+            select.empty();
+
+            select.append(
+                $("<option>")
+                    .val("")
+                    .text("Select Version")
+            );
+
+            versions.forEach(function (version) {
+
+                let label =
+                    version.version;
+
+                if (version.active) {
+                    label += " (Active)";
+                }
+
+                select.append(
+                    $("<option>")
+                        .val(version.id)
+                        .text(label)
+                );
+            });
+
+            select.prop(
+                "disabled",
+                false
+            );
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+            showDesignerMessage(
+                "Could not load template versions.",
+                "error"
+            );
+        }
+    });
+}
+
+function loadTemplatesAndSelect(templateId) {
+
+    $.ajax({
+
+        url: "/api/templates",
+
+        method: "GET",
+
+        success: function (templates) {
+
+            const select =
+                $("#designerTemplate");
+
+            select.empty();
+
+            select.append(
+                $("<option>")
+                    .val("")
+                    .text("Select Template")
+            );
+
+            templates.forEach(function (template) {
+
+                select.append(
+                    $("<option>")
+                        .val(template.id)
+                        .text(template.name)
+                );
+            });
+
+            select.val(templateId);
+			$("#newVersion").prop("disabled", false);
+
+            $("#designerTemplateVersion")
+                .empty()
+                .append(
+                    $("<option>")
+                        .val("")
+                        .text("Select Version")
+                )
+                .prop("disabled", true);
+        }
+    });
+}
+
+function loadTemplateVersionsAndSelect(
+    templateId,
+    versionId
+) {
+
+    $.ajax({
+
+        url:
+            "/api/templates/" +
+            templateId +
+            "/versions",
+
+        method: "GET",
+
+        success: function (versions) {
+			
+			currentTemplateVersions = versions;
+
+            const select =
+                $("#designerTemplateVersion");
+
+            select.empty();
+
+            select.append(
+                $("<option>")
+                    .val("")
+                    .text("Select Version")
+            );
+
+            versions.forEach(function (version) {
+
+                let label = version.version;
+
+                if (version.active) {
+                    label += " (Active)";
+                }
+
+                select.append(
+                    $("<option>")
+                        .val(version.id)
+                        .text(label)
+                );
+            });
+
+            select
+                .prop("disabled", false)
+                .val(versionId);
+
+            loadTargetFields(versionId);
+			displayVersionStatus(versionId);
+        }
+    });
+}
+
+function displayVersionStatus(versionId) {
+
+    const version =
+        currentTemplateVersions.find(
+            function (item) {
+                return String(item.id) === String(versionId);
+            }
+        );
+
+    if (!version) {
+        $("#versionStatus").hide();
+        return;
+    }
+
+    $("#versionStatus").show();
+
+    if (version.active) {
+
+        $("#versionStatusText")
+            .text("Active");
+
+        $("#activateVersion").hide();
+
+    } else {
+
+        $("#versionStatusText")
+            .text("Draft / Inactive");
+
+        $("#activateVersion").show();
+    }
+}
 
 function loadTargetFields(templateVersionId) {
 
@@ -304,13 +939,22 @@ function displayTargetFields(fields) {
 		        .click(function () {
 		            deleteTargetField(field);
 		        });
+		
+		const rulesButton =
+				    $("<button>")
+				        .addClass("rules-field-button")
+				        .text("Rules")
+				        .click(function () {
+				            loadValidationRules(field);
+				        });
 
 		const actionCell =
 				    $("<td>")
 				        .append(moveUpButton)
 				        .append(moveDownButton)
 				        .append(editButton)
-				        .append(deleteButton);
+				        .append(deleteButton)
+						.append(rulesButton);
 
 				row.append(actionCell);
 
@@ -333,7 +977,7 @@ function moveTargetField(fieldId, direction) {
         success: function () {
 
             const templateVersionId =
-                $("#designerTemplateVersionId").val();
+                $("#designerTemplateVersion").val();
 
             loadTargetFields(
                 templateVersionId
@@ -420,7 +1064,7 @@ function deleteTargetField(field) {
         success: function () {
 
             const templateVersionId =
-                $("#designerTemplateVersionId").val();
+                $("#designerTemplateVersion").val();
 
             loadTargetFields(
                 templateVersionId
@@ -480,4 +1124,209 @@ function clearTargetFieldForm() {
     $("#fieldMandatory").prop("checked", false);
     $("#fieldDefaultValue").val("");
     $("#fieldDescription").val("");
+}
+
+function loadValidationRules(field) {
+
+    currentValidationFieldId = field.id;
+
+    $("#validationRulesFieldName")
+        .text(field.name);
+
+    $("#validationRulesPanel").show();
+
+    $.ajax({
+
+        url:
+            "/api/templates/fields/" +
+            field.id +
+            "/validation-rules",
+
+        method: "GET",
+
+        success: function (rules) {
+
+            displayValidationRules(rules);
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+            showDesignerMessage(
+                "Could not load validation rules.",
+                "error"
+            );
+        }
+    });
+}
+
+function displayValidationRules(rules) {
+
+    const tbody =
+        $("#validationRulesTable tbody");
+
+    tbody.empty();
+
+    if (rules.length === 0) {
+
+        const row = $("<tr>");
+
+        row.append(
+            $("<td>")
+                .attr("colspan", 6)
+                .text("No validation rules defined.")
+        );
+
+        tbody.append(row);
+
+        return;
+    }
+
+    rules.forEach(function (rule) {
+
+        const row = $("<tr>");
+
+        row.append(
+            $("<td>").text(rule.sequence)
+        );
+
+        row.append(
+            $("<td>").text(rule.ruleType)
+        );
+
+        row.append(
+            $("<td>").text(rule.ruleValue || "")
+        );
+
+        row.append(
+            $("<td>").text(rule.errorMessage || "")
+        );
+
+        row.append(
+            $("<td>").text(
+                rule.active ? "Yes" : "No"
+            )
+        );
+
+		const editButton =
+		    $("<button>")
+		        .addClass("edit-rule-button")
+		        .text("Edit")
+		        .click(function () {
+		            editValidationRule(rule);
+		        });
+
+		const deleteButton =
+		    $("<button>")
+		        .addClass("delete-rule-button")
+		        .text("Delete")
+		        .click(function () {
+		            deleteValidationRule(rule);
+		        });
+
+		row.append(
+		    $("<td>")
+		        .append(editButton)
+		        .append(deleteButton)
+		);
+
+        tbody.append(row);
+    });
+}
+
+function reloadValidationRules() {
+
+    if (!currentValidationFieldId) {
+        return;
+    }
+
+    $.ajax({
+
+        url:
+            "/api/templates/fields/" +
+            currentValidationFieldId +
+            "/validation-rules",
+
+        method: "GET",
+
+        success: function (rules) {
+            displayValidationRules(rules);
+        },
+
+        error: function (xhr) {
+            console.error(xhr);
+        }
+    });
+}
+
+function editValidationRule(rule) {
+
+    editingValidationRuleId = rule.id;
+
+    $("#validationRuleType")
+        .val(rule.ruleType);
+
+    $("#validationRuleValue")
+        .val(rule.ruleValue || "");
+
+    $("#validationRuleErrorMessage")
+        .val(rule.errorMessage || "");
+
+    $("#validationRuleSequence")
+        .val(rule.sequence);
+
+    $("#validationRuleActive")
+        .prop("checked", rule.active);
+
+    $("#validationRuleForm h3")
+        .text("Edit Validation Rule");
+
+    $("#saveValidationRule")
+        .text("Update Rule");
+
+    $("#validationRuleForm").show();
+}
+
+function deleteValidationRule(rule) {
+
+    const confirmed =
+        confirm(
+            'Are you sure you want to delete "' +
+            rule.ruleType +
+            '" validation rule?'
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    $.ajax({
+
+        url:
+            "/api/templates/validation-rules/" +
+            rule.id,
+
+        method: "DELETE",
+
+        success: function () {
+
+            reloadValidationRules();
+
+            showDesignerMessage(
+                "Validation rule deleted successfully.",
+                "success"
+            );
+        },
+
+        error: function (xhr) {
+
+            console.error(xhr);
+
+            showDesignerMessage(
+                "Could not delete validation rule.",
+                "error"
+            );
+        }
+    });
 }

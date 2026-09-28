@@ -31,22 +31,16 @@ public class MappingProfileController {
         MappingProfile profile = mappingProfileService.createProfile(request);
 
         return new MappingProfileResponse(profile.getId(), profile.getName(), profile.getTemplateVersion().getId(),
-                profile.getTemplateVersion().getVersion(), profile.getActive());
+                                          profile.getTemplateVersion().getVersion(), profile.getActive());
     }
     
     @GetMapping
-    public List<MappingProfileOption> getProfiles(
-            @RequestParam Long templateVersionId) {
+    public List<MappingProfileOption> getProfiles(@RequestParam Long templateVersionId) {
 
         return mappingProfileRepository
                 .findByTemplateVersionIdAndActiveTrue(templateVersionId)
                 .stream()
-                .map(profile ->
-                        new MappingProfileOption(
-                                profile.getId(),
-                                profile.getName()
-                        )
-                )
+                .map(profile -> new MappingProfileOption(profile.getId(), profile.getName()))
                 .toList();
     }
 }

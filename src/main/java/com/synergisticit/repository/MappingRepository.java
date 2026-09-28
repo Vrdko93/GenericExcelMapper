@@ -8,8 +8,10 @@ import com.synergisticit.entity.Mapping;
 public interface MappingRepository extends JpaRepository<Mapping, Long> {
 
     boolean existsBySourceColumnId(Long sourceColumnId);
-
+    
     boolean existsByTargetFieldId(Long targetFieldId);
+
+    boolean existsBySourceColumnSourceProfileIdAndTargetFieldId(Long sourceProfileId, Long targetFieldId);
     
     List<Mapping> findBySourceColumnSourceProfileId(Long sourceProfileId);
     

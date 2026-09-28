@@ -1,9 +1,13 @@
 package com.synergisticit.controller;
 
 import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +20,8 @@ import com.synergisticit.repository.TargetFieldRepository;
 import com.synergisticit.repository.TemplateRepository;
 import com.synergisticit.repository.TemplateVersionRepository;
 import com.synergisticit.repository.ValidationRuleRepository;
+import com.synergisticit.service.TemplateVersionService;
+import com.synergisticit.service.ValidationRuleService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,29 +34,33 @@ public class TemplateController {
     private final TemplateVersionRepository templateVersionRepository;
     private final TargetFieldRepository targetFieldRepository;
     private final ValidationRuleRepository validationRuleRepository;
+    private final TemplateVersionService templateVersionService;
+    private final ValidationRuleService validationRuleService;
 
     @GetMapping
     public List<Template> getAllTemplates() {
+    	
         return templateRepository.findAll();
     }
 
     @GetMapping("/{id}")
     public Template getTemplateById(@PathVariable Long id) {
-        return templateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Template not found"));
+    	
+        return templateRepository.findById(id).orElseThrow(() -> new RuntimeException("Template not found"));
     }
 
     @PostMapping
     public Template createTemplate(@RequestBody Template template) {
+    	
         template.setStatus("DRAFT");
+        
         return templateRepository.save(template);
     }
     
     @PostMapping("/{templateId}/versions")
     public TemplateVersion createVersion(@PathVariable Long templateId, @RequestBody TemplateVersion version) {
 
-        Template template = templateRepository.findById(templateId)
-                .orElseThrow(() -> new RuntimeException("Template not found"));
+        Template template = templateRepository.findById(templateId).orElseThrow(() -> new RuntimeException("Template not found"));
 
         version.setTemplate(template);
         version.setActive(false);
@@ -68,8 +78,8 @@ public class TemplateController {
     public TargetField createTargetField(@PathVariable Long versionId, @RequestBody TargetField field) {
 
         TemplateVersion version = templateVersionRepository.findById(versionId)
-                .orElseThrow(() -> new RuntimeException("Template version not found"));
-
+        		.orElseThrow(() -> new RuntimeException("Template version not found"));
+        
         field.setTemplateVersion(version);
 
         return targetFieldRepository.save(field);
@@ -85,7 +95,7 @@ public class TemplateController {
     public ValidationRule createValidationRule(@PathVariable Long fieldId, @RequestBody ValidationRule rule) {
 
         TargetField field = targetFieldRepository.findById(fieldId)
-                .orElseThrow(() -> new RuntimeException("Target field not found"));
+        		.orElseThrow(() -> new RuntimeException("Target field not found"));
 
         rule.setTargetField(field);
 
@@ -100,5 +110,25 @@ public class TemplateController {
     public List<ValidationRule> getValidationRules(@PathVariable Long fieldId) {
 
         return validationRuleRepository.findByTargetFieldIdOrderBySequence(fieldId);
+    }
+    
+    @PutMapping("/versions/{versionId}/activate")
+    public TemplateVersion activateVersion(@PathVariable Long versionId) {
+
+        return templateVersionService.activateVersion(versionId);
+    }
+    
+    @PutMapping("/validation-rules/{ruleId}")
+    public ValidationRule updateValidationRule(@PathVariable Long ruleId, @RequestBody ValidationRule rule) {
+
+        return validationRuleService.updateRule(ruleId, rule);
+    }
+
+    @DeleteMapping("/validation-rules/{ruleId}")
+    public ResponseEntity<Void> deleteValidationRule(@PathVariable Long ruleId) {
+
+        validationRuleService.deleteRule(ruleId);
+
+        return ResponseEntity.noContent().build();
     }
 }

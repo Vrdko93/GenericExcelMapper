@@ -20,28 +20,129 @@
 
         <h2>Template Version</h2>
 
-        <div class="controls">
+		<div class="template-selection">
 
-            <label for="designerTemplateVersionId">
-                Template Version ID
-            </label>
+		    <!-- Template -->
+		    <label>
+		        Template
+		        <select id="designerTemplate">
+		            <option value="">
+		                Select Template
+		            </option>
+		        </select>
+		    </label>
 
-            <input
-                type="number"
-                id="designerTemplateVersionId"
-                value="1"
-                min="1"
-            >
+		    <button id="newTemplate">
+		        + New Template
+		    </button>
+			<br><br>
+		    <!-- Version -->
+		    <label>
+		        Version
+		        <select id="designerTemplateVersion" disabled>
+		            <option value="">
+		                Select Version
+		            </option>
+		        </select>
+		    </label>
 
-            <button id="loadTargetFields">
-                Load Target Fields
-            </button>
+		    <button id="newVersion" disabled>
+		        + New Version
+		    </button>
+			<br><br>
+		    <!-- Version Status -->
+		    <div id="versionStatus" style="display: none;">
+		        Status:
+		        <strong id="versionStatusText"></strong>
 
-        </div>
+		        <button id="activateVersion"
+		                style="display: none;">
+		            Activate Version
+		        </button>
+		    </div>
 
-        <div id="designerMessage"></div>
+		</div>
 
-    </div>
+
+		<div id="designerMessage"></div>
+
+
+		<!-- New Template Form -->
+		<div id="newTemplateForm"
+		     class="designer-form"
+		     style="display: none;">
+
+		    <h3>New Template</h3>
+
+		    <label>
+		        Template Name
+		        <input
+		            type="text"
+		            id="newTemplateName"
+		            placeholder="Employee Template">
+		    </label>
+
+		    <label>
+		        Description
+		        <textarea
+		            id="newTemplateDescription"
+		            placeholder="Template description"></textarea>
+		    </label>
+			<br><br>
+		    <div>
+		        <button id="saveTemplate">
+		            Create Template
+		        </button>
+
+		        <button id="cancelTemplate">
+		            Cancel
+		        </button>
+		    </div>
+
+		</div>
+
+
+		<!-- New Version Form -->
+		<div id="newVersionForm"
+		     class="designer-form"
+		     style="display: none;">
+
+		    <h3>New Template Version</h3>
+
+		    <label>
+		        Version
+		        <input
+		            type="text"
+		            id="newVersionName"
+		            placeholder="1.0">
+		    </label>
+
+		    <label>
+		        Effective Date
+		        <input
+		            type="date"
+		            id="newVersionEffectiveDate">
+		    </label>
+
+		    <label>
+		        Published By
+		        <input
+		            type="text"
+		            id="newVersionPublishedBy"
+		            placeholder="Admin">
+		    </label>
+			<br><br>
+		    <div>
+		        <button id="saveVersion">
+		            Create Version
+		        </button>
+
+		        <button id="cancelVersion">
+		            Cancel
+		        </button>
+		    </div>
+
+		</div>
 
 
     <div class="panel">
@@ -142,6 +243,100 @@
 
     </div>
 
+	<div id="validationRulesPanel"
+	     class="panel"
+	     style="display: none;">
+
+	    <div class="designer-header">
+	        <h2>
+	            Validation Rules —
+	            <span id="validationRulesFieldName"></span>
+	        </h2>
+			<button id="addValidationRule">
+			    + Add Rule
+			</button>
+	    </div>
+
+		<div id="validationRuleForm"
+		     class="designer-form"
+		     style="display: none;">
+
+		    <h3>Add Validation Rule</h3>
+
+		    <label>
+		        Rule Type
+		        <select id="validationRuleType">
+		            <option value="">Select Rule Type</option>
+		            <option value="REQUIRED">REQUIRED</option>
+		            <option value="REGEX">REGEX</option>
+		            <option value="MIN_LENGTH">MIN_LENGTH</option>
+		            <option value="MAX_LENGTH">MAX_LENGTH</option>
+		            <option value="MIN_VALUE">MIN_VALUE</option>
+		            <option value="MAX_VALUE">MAX_VALUE</option>
+		        </select>
+		    </label>
+
+		    <label>
+		        Rule Value
+		        <input
+		            type="text"
+		            id="validationRuleValue"
+		            placeholder="Rule value">
+		    </label>
+
+		    <label>
+		        Error Message
+		        <input
+		            type="text"
+		            id="validationRuleErrorMessage"
+		            placeholder="Validation error message">
+		    </label>
+
+		    <label>
+		        Sequence
+		        <input
+		            type="number"
+		            id="validationRuleSequence"
+		            min="1">
+		    </label>
+
+			<label class="checkbox-label">
+			    <input
+			        type="checkbox"
+			        id="validationRuleActive"
+			        checked>
+				<span>Active</span> 
+			</label>
+			<br>
+		    <div>
+		        <button id="saveValidationRule">
+		            Save Rule
+		        </button>
+
+		        <button id="cancelValidationRule">
+		            Cancel
+		        </button>
+		    </div>
+
+		</div>
+		
+	    <table id="validationRulesTable">
+	        <thead>
+	            <tr>
+	                <th>#</th>
+	                <th>Rule Type</th>
+	                <th>Rule Value</th>
+	                <th>Error Message</th>
+	                <th>Active</th>
+	                <th>Action</th>
+	            </tr>
+	        </thead>
+
+	        <tbody></tbody>
+	    </table>
+
+	</div>
+	
     <a href="index.html">
         Back to Mapping
     </a>

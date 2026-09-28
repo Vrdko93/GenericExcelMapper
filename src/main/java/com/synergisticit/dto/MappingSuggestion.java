@@ -16,6 +16,7 @@ public class MappingSuggestion {
 
     private Long targetFieldId;
     private String targetFieldName;
+    
     private String targetFieldKey;
     private String targetDataType;
 

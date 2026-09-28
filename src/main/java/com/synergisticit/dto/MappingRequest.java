@@ -11,8 +11,10 @@ public class MappingRequest {
 
     private Long sourceColumnId;
     private Long targetFieldId;
+    
     private TransformationType transformation;
     private MappingMethod mappingMethod;
+    
     private Integer aiConfidence;
     private Long aiRecommendedTargetFieldId;
     private String transformationConfig;

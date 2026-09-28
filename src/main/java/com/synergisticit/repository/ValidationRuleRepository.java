@@ -7,4 +7,6 @@ import com.synergisticit.entity.ValidationRule;
 public interface ValidationRuleRepository extends JpaRepository<ValidationRule, Long> {
 
 	List<ValidationRule> findByTargetFieldIdOrderBySequence(Long targetFieldId);
+
+	List<ValidationRule> findByTargetFieldTemplateVersionIdAndActiveTrueOrderBySequence(Long templateVersionId);
 }

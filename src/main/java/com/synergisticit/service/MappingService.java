@@ -1,5 +1,7 @@
 package com.synergisticit.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import com.synergisticit.dto.MappingOverrideRequest;
 import com.synergisticit.dto.MappingRequest;
@@ -34,8 +36,11 @@ public class MappingService {
             throw new IllegalArgumentException("Source column is already mapped: " + sourceColumn.getColumnName());
         }
 
-        if (mappingRepository.existsByTargetFieldId(targetField.getId())) {
-            throw new IllegalArgumentException("Target field is already mapped: " + targetField.getName());
+        Long sourceProfileId = sourceColumn.getSourceProfile().getId();
+
+        if (mappingRepository.existsBySourceColumnSourceProfileIdAndTargetFieldId(sourceProfileId, targetField.getId())) {
+
+            throw new IllegalArgumentException("Target field is already mapped for this source profile: " + targetField.getName());
         }
 
         TransformationType transformation = request.getTransformation();
@@ -66,7 +71,6 @@ public class MappingService {
         mapping.setMappingMethod(mappingMethod);
         mapping.setAiConfidence(request.getAiConfidence());
         mapping.setAiRecommendedTargetField(aiRecommendedTargetField);
-        mapping.setTransformation(transformation);
         mapping.setTransformationConfig(request.getTransformationConfig());
 
         return mappingRepository.save(mapping);
@@ -81,10 +85,12 @@ public class MappingService {
                         .orElseThrow(() -> new IllegalArgumentException("Target field not found: " 
                         											+ request.getTargetFieldId()));
 
-        if (!mapping.getTargetField().getId().equals(newTargetField.getId()) 
-        		&& mappingRepository.existsByTargetFieldId(newTargetField.getId())) {
+        Long sourceProfileId = mapping.getSourceColumn().getSourceProfile().getId();
 
-            throw new IllegalArgumentException("Target field is already mapped: " + newTargetField.getName());
+        if (!mapping.getTargetField().getId().equals(newTargetField.getId()) 
+        		&& mappingRepository.existsBySourceColumnSourceProfileIdAndTargetFieldId(sourceProfileId, newTargetField.getId())) {
+
+            throw new IllegalArgumentException("Target field is already mapped for this source profile: " + newTargetField.getName());
         }
 
         mapping.setTargetField(newTargetField);
@@ -96,5 +102,10 @@ public class MappingService {
         mapping.setMappingMethod(MappingMethod.MANUAL);
 
         return mappingRepository.save(mapping);
+    }
+    
+    public List<Mapping> getMappingsBySourceProfile(Long sourceProfileId) {
+
+        return mappingRepository.findBySourceColumnSourceProfileId(sourceProfileId);
     }
 }

@@ -153,11 +153,13 @@ public class ExcelService {
                     allBoolean = false;
 
                     if (DateUtil.isCellDateFormatted(cell)) {
+                    	
                         allNumeric = false;
                         allInteger = false;
-                    } else {
+                    } 
+                    else {
+                    	
                         allDate = false;
-
                         double value = cell.getNumericCellValue();
 
                         if (value % 1 != 0) {
@@ -220,15 +222,13 @@ public class ExcelService {
             return false;
         }
 
-        return value.equalsIgnoreCase("yes")
-                || value.equalsIgnoreCase("no")
-                || value.equalsIgnoreCase("true")
+        return value.equalsIgnoreCase("yes") 
+        		|| value.equalsIgnoreCase("no") 
+        		|| value.equalsIgnoreCase("true")
                 || value.equalsIgnoreCase("false");
     }
     
-    public List<Map<String, String>> readRows(
-            MultipartFile file,
-            String sheetName) throws IOException {
+    public List<Map<String, String>> readRows(MultipartFile file, String sheetName) throws IOException {
 
         List<Map<String, String>> rows = new ArrayList<>();
 
@@ -238,9 +238,7 @@ public class ExcelService {
             Sheet sheet = workbook.getSheet(sheetName);
 
             if (sheet == null) {
-                throw new IllegalArgumentException(
-                        "Sheet not found: " + sheetName
-                );
+                throw new IllegalArgumentException("Sheet not found: " + sheetName);
             }
 
             Row headerRow = sheet.getRow(0);
@@ -252,14 +250,10 @@ public class ExcelService {
             List<String> headers = new ArrayList<>();
 
             for (Cell cell : headerRow) {
-                headers.add(
-                        getCellValueAsString(cell)
-                );
+                headers.add(getCellValueAsString(cell));
             }
 
-            for (int rowIndex = 1;
-                 rowIndex <= sheet.getLastRowNum();
-                 rowIndex++) {
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 
                 Row row = sheet.getRow(rowIndex);
 
@@ -267,36 +261,23 @@ public class ExcelService {
                     continue;
                 }
 
-                Map<String, String> rowData =
-                        new LinkedHashMap<>();
-
+                Map<String, String> rowData = new LinkedHashMap<>();
                 boolean hasValue = false;
 
-                for (int columnIndex = 0;
-                     columnIndex < headers.size();
-                     columnIndex++) {
+                for (int columnIndex = 0; columnIndex < headers.size(); columnIndex++) {
 
-                    Cell cell =
-                            row.getCell(
-                                    columnIndex,
-                                    Row.MissingCellPolicy.RETURN_BLANK_AS_NULL
-                            );
-
+                    Cell cell = row.getCell(columnIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
                     String value = "";
 
                     if (cell != null) {
-                        value =
-                                getCellValueAsString(cell);
+                        value = getCellValueAsString(cell);
                     }
 
                     if (!value.isBlank()) {
                         hasValue = true;
                     }
 
-                    rowData.put(
-                            headers.get(columnIndex),
-                            value
-                    );
+                    rowData.put(headers.get(columnIndex), value);
                 }
 
                 if (hasValue) {

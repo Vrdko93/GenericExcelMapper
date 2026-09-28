@@ -42,14 +42,9 @@ public class TargetFieldService {
         targetField.setName(request.getName());
         targetField.setDescription(request.getDescription());
 
-        Integer nextSequence =
-                targetFieldRepository
-                        .findTopByTemplateVersionIdOrderBySequenceDesc(
-                                request.getTemplateVersionId()
-                        )
-                        .map(field ->
-                                field.getSequence() + 1
-                        )
+        Integer nextSequence = targetFieldRepository
+        		        .findTopByTemplateVersionIdOrderBySequenceDesc(request.getTemplateVersionId())
+                        .map(field -> field.getSequence() + 1)
                         .orElse(1);
 
         targetField.setSequence(nextSequence);
@@ -99,8 +94,7 @@ public class TargetFieldService {
             throw new IllegalStateException("Target field cannot be deleted because it is referenced by an AI recommendation.");
         }
         
-        Long templateVersionId =
-                targetField.getTemplateVersion().getId();
+        Long templateVersionId = targetField.getTemplateVersion().getId();
 
         targetFieldRepository.delete(targetField);
         targetFieldRepository.flush();
@@ -115,7 +109,6 @@ public class TargetFieldService {
                         .orElseThrow(() -> new IllegalArgumentException("Target field not found: " + id));
 
         Long templateVersionId = current.getTemplateVersion().getId();
-
         List<TargetField> fields = targetFieldRepository.findByTemplateVersionIdOrderBySequence(templateVersionId);
 
         int currentIndex = -1;
@@ -135,7 +128,6 @@ public class TargetFieldService {
         }
 
         TargetField previous = fields.get(currentIndex - 1);
-
         swapSequence(current, previous);
     }
     
@@ -147,7 +139,6 @@ public class TargetFieldService {
                         .orElseThrow(() -> new IllegalArgumentException("Target field not found: " + id));
 
         Long templateVersionId = current.getTemplateVersion().getId();
-
         List<TargetField> fields = targetFieldRepository.findByTemplateVersionIdOrderBySequence(templateVersionId);
 
         int currentIndex = -1;
@@ -167,7 +158,6 @@ public class TargetFieldService {
         }
 
         TargetField next = fields.get(currentIndex + 1);
-
         swapSequence(current, next);
     }
     
@@ -183,16 +173,11 @@ public class TargetFieldService {
     
     private void normalizeSequences(Long templateVersionId) {
 
-        List<TargetField> fields =
-                targetFieldRepository
-                        .findByTemplateVersionIdOrderBySequence(
-                                templateVersionId
-                        );
+        List<TargetField> fields = targetFieldRepository.findByTemplateVersionIdOrderBySequence(templateVersionId);
 
         for (int i = 0; i < fields.size(); i++) {
 
             TargetField field = fields.get(i);
-
             int expectedSequence = i + 1;
 
             if (!field.getSequence().equals(expectedSequence)) {

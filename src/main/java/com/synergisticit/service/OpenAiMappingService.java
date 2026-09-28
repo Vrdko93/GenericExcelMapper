@@ -40,31 +40,20 @@ public class OpenAiMappingService {
                 .stream()
                 .flatMap(choice -> choice.message().content().stream())
                 .findFirst()
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "OpenAI returned no structured mapping response"
-                        )
-                );
+                .orElseThrow(() -> new IllegalStateException("OpenAI returned no structured mapping response"));
     }
     
     public AiMappingResponse suggestMappings(Long sourceProfileId, Long templateVersionId) {
 
-        List<SourceColumn> sourceColumns =
-                sourceColumnRepository.findBySourceProfileId(sourceProfileId);
-
-        List<TargetField> targetFields =
-                targetFieldRepository.findByTemplateVersionIdOrderBySequence(
-                        templateVersionId
-                );
+        List<SourceColumn> sourceColumns = sourceColumnRepository.findBySourceProfileId(sourceProfileId);
+        List<TargetField> targetFields = targetFieldRepository.findByTemplateVersionIdOrderBySequence(templateVersionId);
 
         String prompt = buildPrompt(sourceColumns, targetFields);
 
         return suggestMappings(prompt);
     }
     
-    public AiMappingResponse suggestMappings(
-            List<SourceColumn> sourceColumns,
-            List<TargetField> targetFields) {
+    public AiMappingResponse suggestMappings(List<SourceColumn> sourceColumns, List<TargetField> targetFields) {
 
         String prompt = buildPrompt(sourceColumns, targetFields);
 
@@ -130,7 +119,6 @@ public class OpenAiMappingService {
         }
 
         prompt.append("""
-
                 Analyze all source columns against all target fields.
                 Return every strong mapping you can identify.
                 """);

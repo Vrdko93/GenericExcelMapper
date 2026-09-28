@@ -25,31 +25,74 @@ $(document).ready(function () {
 
 	});
 	
-    $("#loadSuggestions").click(function () {
+	$("#loadSuggestions").click(function () {
 
-        const sourceProfileId =
-            $("#sourceProfileId").val();
+	    const sourceProfileId =
+	        $("#sourceProfileId").val();
 
-        const templateVersionId =
-            $("#templateVersionId").val();
-			
-		const mappingProfileId =
-			$("#mappingProfileId").val();
+	    const templateVersionId =
+	        $("#templateVersionId").val();
 
-        if (!sourceProfileId || !templateVersionId) {
-            showMessage(
-                "Please enter Source Profile ID and Template Version ID.",
-                "error"
-            );
-            return;
-        }
+	    const mappingProfileId =
+	        $("#mappingProfileId").val();
 
-        loadSuggestions(
-            sourceProfileId,
-            templateVersionId,
-			mappingProfileId
-        );
-    });
+	    if (!sourceProfileId || !templateVersionId) {
+
+	        showMessage(
+	            "Please enter Source Profile ID and Template Version ID.",
+	            "error"
+	        );
+
+	        return;
+	    }
+
+	    $.ajax({
+
+	        url: "/api/mappings/review",
+
+	        method: "GET",
+
+	        data: {
+	            sourceProfileId: sourceProfileId
+	        },
+
+	        success: function (mappings) {
+
+	            if (mappings.length > 0) {
+
+	                // Existing accepted mappings
+	                displayMappingReview(mappings);
+
+	                $("#suggestionsTable tbody").empty();
+
+	                showMessage(
+	                    "Existing mappings loaded.",
+	                    "success"
+	                );
+
+	                return;
+	            }
+
+	            // No accepted mappings yet.
+	            // Generate suggestions normally.
+	            loadSuggestions(
+	                sourceProfileId,
+	                templateVersionId,
+	                mappingProfileId
+	            );
+	        },
+
+	        error: function (xhr) {
+
+	            console.error(xhr);
+
+	            showMessage(
+	                "Could not check existing mappings.",
+	                "error"
+	            );
+	        }
+	    });
+	});
 
 	$("#previewMappedData").click(function () {
 
@@ -697,35 +740,34 @@ function acceptMapping(
     row
 ) {
 
-    const wasOverridden =
-        selectedTargetFieldId !==
-        suggestion.targetFieldId;
+	const wasOverridden =
+	    selectedTargetFieldId !== suggestion.targetFieldId;
 
-    const request = {
+	const originallyAi =
+	    suggestion.mappingMethod === "AI";
 
-        sourceColumnId:
-            suggestion.sourceColumnId,
+	const request = {
+	    sourceColumnId: suggestion.sourceColumnId,
+	    targetFieldId: selectedTargetFieldId,
+	    transformation: selectedTransformation,
+	    transformationConfig:
+	        selectedTransformationConfig || null,
 
-        targetFieldId:
-            selectedTargetFieldId,
+	    mappingMethod:
+	        wasOverridden
+	            ? "MANUAL"
+	            : suggestion.mappingMethod,
 
-        transformation:
-            selectedTransformation,
-			
-		transformationConfig:
-			selectedTransformationConfig || null,
+	    aiConfidence:
+	        originallyAi
+	            ? suggestion.confidence
+	            : null,
 
-			mappingMethod:
-			    wasOverridden
-			        ? "MANUAL"
-			        : suggestion.mappingMethod,
-
-        aiConfidence:
-            suggestion.confidence,
-
-        aiRecommendedTargetFieldId:
-            suggestion.targetFieldId
-    };
+	    aiRecommendedTargetFieldId:
+	        originallyAi
+	            ? suggestion.targetFieldId
+	            : null
+	};
 
 
     $.ajax({
@@ -764,6 +806,8 @@ function acceptMapping(
                     : "Mapping accepted.",
                 "success"
             );
+			
+			loadMappingReview();
         },
 
         error: function (xhr) {
@@ -1083,13 +1127,13 @@ function saveSourceProfile(file, sheetName) {
 			const templateVersionId =
 			    $("#templateVersionId").val();
 
-		/*	if (templateVersionId) {
+			if (templateVersionId) {
 
 			    loadSuggestions(
 			        sourceProfile.id,
 			        templateVersionId
 			    );
-			}*/
+			}
 
         },
 
@@ -1277,4 +1321,121 @@ function exportMappedExcel(
 			    );
         }
     });
+}
+
+function loadMappingReview() {
+
+    const profileId =
+        $("#sourceProfileId").val();
+
+    if (!profileId) {
+        return;
+    }
+
+    $.ajax({
+
+        url: "/api/mappings/review",
+
+        method: "GET",
+
+        data: {
+            sourceProfileId: profileId
+        },
+
+        success: function (mappings) {
+
+            displayMappingReview(mappings);
+        },
+
+        error: function (xhr) {
+
+            console.error(
+                "Mapping review failed:",
+                xhr.status,
+                xhr.responseText
+            );
+
+            showMessage(
+                "Unable to load mapping review.",
+                "error"
+            );
+        }
+    });
+}
+
+function displayMappingReview(mappings) {
+
+    const tbody =
+        $("#mappingReviewTable tbody");
+
+    tbody.empty();
+	
+	if (mappings.length === 0) {
+
+	    $("#mappingReviewSection").hide();
+
+	    return;
+	}
+
+    mappings.forEach(function (mapping) {
+
+        const row = $("<tr>");
+
+        row.append(
+            $("<td>").text(
+                mapping.sourceColumnName
+            )
+        );
+
+        row.append(
+            $("<td>").text(
+                mapping.targetFieldName
+            )
+        );
+
+        row.append(
+            $("<td>").text(
+                mapping.mappingMethod
+            )
+        );
+
+        row.append(
+            $("<td>").text(
+                mapping.aiRecommendedTargetFieldName || "—"
+            )
+        );
+
+        row.append(
+            $("<td>").text(
+                mapping.aiConfidence != null
+                    ? mapping.aiConfidence + "%"
+                    : "—"
+            )
+        );
+
+        let transformation =
+            mapping.transformation || "DIRECT";
+
+        if (mapping.transformationConfig) {
+            transformation +=
+                " (" +
+                mapping.transformationConfig +
+                ")";
+        }
+
+        row.append(
+            $("<td>").text(transformation)
+        );
+
+        tbody.append(row);
+    });
+
+    $("#mappingReviewSection").show();
+}
+
+function clearMappingReview() {
+
+    $("#mappingReviewTable tbody").empty();
+
+    $("#mappingReviewSection").hide();
 }

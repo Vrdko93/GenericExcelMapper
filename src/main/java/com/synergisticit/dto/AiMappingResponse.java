@@ -15,11 +15,9 @@ public class AiMappingResponse {
     public static class AiMapping {
 
         private Long sourceColumnId;
-
         private Long targetFieldId;
-
+        
         private int confidence;
-
         private String reason;
     }
 }
